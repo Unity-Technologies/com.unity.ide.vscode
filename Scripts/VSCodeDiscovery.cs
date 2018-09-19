@@ -9,13 +9,13 @@ using UnityEngine;
 namespace VSCodePackage
 {
     public class VSCodeDiscovery {
-        List<ExternalScriptEditor.Installation> m_Installations;
+        List<ScriptEditor.Installation> m_Installations;
 
-        public ExternalScriptEditor.Installation[] PathCallback()
+        public ScriptEditor.Installation[] PathCallback()
         {
             if (m_Installations == null)
             {
-                m_Installations = new List<ExternalScriptEditor.Installation>();
+                m_Installations = new List<ScriptEditor.Installation>();
                 FindInstallationPaths();
             }
 
@@ -48,27 +48,37 @@ namespace VSCodePackage
 #endif
             var existingPaths = possiblePaths.Where(VSCodeExists).ToList();
             var lcp = GetLongestCommonPrefix(existingPaths);
-            if (existingPaths.Count <= 1)
-            {
-                var path = existingPaths.First();
-                m_Installations = new List<ExternalScriptEditor.Installation>
-                {
-                    new ExternalScriptEditor.Installation
+            switch (existingPaths.Count) {
+                case 0:
+                    return;
+                case 1: {
+                    var path = existingPaths.First();
+                    m_Installations = new List<ScriptEditor.Installation>
                     {
-                        Path = path,
-                        Name = path.Contains("Insiders")
-                            ? "Visual Studio Code Insiders"
-                            : "Visual Studio Code"
-                    }
-                };
-            }
-            else
-            {
-                m_Installations = existingPaths.Select(path => new ExternalScriptEditor.Installation
+                        new ScriptEditor.Installation
+                        {
+                            Path = path,
+                            Name = path.Contains("Insiders")
+                                ? "Visual Studio Code Insiders"
+                                : "Visual Studio Code"
+                        }
+                    };
+                    break;
+                }
+                case 2 when existingPaths.Any(path => !(path.Substring(lcp.Length).Contains("/") || path.Substring(lcp.Length).Contains("\\"))):
                 {
-                    Name = path.Substring(lcp.Length),
-                    Path = path
-                }).ToList();
+                    goto case 1;
+                }
+                default:
+                {
+                    m_Installations = existingPaths.Select(path => new ScriptEditor.Installation
+                    {
+                        Name = $"Visual Studio Code Insiders ({path.Substring(lcp.Length)})",
+                        Path = path
+                    }).ToList();
+
+                    break;
+                }
             }
         }
 

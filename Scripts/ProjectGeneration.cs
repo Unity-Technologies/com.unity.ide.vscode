@@ -91,7 +91,7 @@ namespace VSCodePackage
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
         static readonly string MSBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
 
-        string _projectDirectory;
+        public string ProjectDirectory { get; }
 
         string footerTemplate = string.Join("\r\n",
             @"  </ItemGroup>",
@@ -157,8 +157,8 @@ namespace VSCodePackage
 
         public ProjectGeneration()
         {
-            _projectDirectory = Directory.GetParent(Application.dataPath).FullName;
-            _projectName = Path.GetFileName(_projectDirectory);
+            ProjectDirectory = Directory.GetParent(Application.dataPath).FullName;
+            _projectName = Path.GetFileName(ProjectDirectory);
         }
 
         public void GenerateSolutionAndProjectFiles()
@@ -170,13 +170,14 @@ namespace VSCodePackage
 
             var responseFilePath = Path.Combine("Assets", "mcs.rsp");
 
-//		var responseFileData = ScriptCompilerBase.ParseResponseFileFromFile(Path.Combine(_projectDirectory, responseFilePath));
+            // TODO: Talk about this..
+            /*var responseFileData = ScriptCompilerBase.ParseResponseFileFromFile(Path.Combine(_projectDirectory, responseFilePath));
 
-//		if (responseFileData.Errors.Length > 0)
-//		{
-//			foreach (var error in responseFileData.Errors)
-//				UnityEngine.Debug.LogErrorFormat("{0} Parse Error : {1}", responseFilePath, error);
-//		}
+            if (responseFileData.Errors.Length > 0)
+            {
+                foreach (var error in responseFileData.Errors)
+                    UnityEngine.Debug.LogErrorFormat("{0} Parse Error : {1}", responseFilePath, error);
+            }*/
 
             SyncSolution(islands);
             var allProjectIslands = RelevantIslandsForMode(islands, Mode.UnityScriptAsPrecompiledAssembly).ToList();
@@ -240,7 +241,7 @@ namespace VSCodePackage
                     }
                 }
 
-                string fullReference = Path.IsPathRooted(reference) ? reference : Path.Combine(_projectDirectory, reference);
+                string fullReference = Path.IsPathRooted(reference) ? reference : Path.Combine(ProjectDirectory, reference);
 
                 //if (!AssemblyHelper.IsManagedAssembly(fullReference))
 //                    continue;
@@ -671,12 +672,12 @@ namespace VSCodePackage
         string ProjectFile(Assembly island)
         {
             var language = ScriptingLanguageFor(GetExtensionOfSourceFiles(island.sourceFiles));
-            return Path.Combine(_projectDirectory, $"{Path.GetFileNameWithoutExtension(island.outputPath)}{ProjectExtensions[language]}");
+            return Path.Combine(ProjectDirectory, $"{Path.GetFileNameWithoutExtension(island.outputPath)}{ProjectExtensions[language]}");
         }
 
         string SolutionFile()
         {
-            return Path.Combine(_projectDirectory, $"{_projectName}.sln");
+            return Path.Combine(ProjectDirectory, $"{_projectName}.sln");
         }
 
         Dictionary<string, string> GenerateAllAssetProjectParts()
@@ -732,7 +733,7 @@ namespace VSCodePackage
 
         string EscapedRelativePathFor(string file)
         {
-            var projectDir = ConvertSeparatorsToWindows(_projectDirectory);
+            var projectDir = ConvertSeparatorsToWindows(ProjectDirectory);
             file = ConvertSeparatorsToWindows(file);
             var path = SkipPathPrefix(file, projectDir);
 /*#if ENABLE_PACKMAN
@@ -763,7 +764,7 @@ namespace VSCodePackage
 
         void WriteVSCodeSettingsFiles()
         {
-            var vsCodeDirectory = Path.Combine(_projectDirectory, ".vscode");
+            var vsCodeDirectory = Path.Combine(ProjectDirectory, ".vscode");
 
             if (!Directory.Exists(vsCodeDirectory))
                 Directory.CreateDirectory(vsCodeDirectory);
@@ -777,6 +778,10 @@ namespace VSCodePackage
         string GetProjectFooterTemplate()
         {
             return EditorPrefs.GetString("VSProjectFooter", footerTemplate);
+        }
+
+        public void SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
+        {
         }
     }
 }
