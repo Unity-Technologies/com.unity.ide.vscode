@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using UnityEditor;
+using UnityEditor.Compilation;
 using UnityEngine;
 using VSCodePackage;
 
@@ -67,7 +68,7 @@ public class VSCodeScriptEditor : IExternalScriptEditor
 
     public void Sync()
     {
-        m_ProjectGeneration.GenerateSolutionAndProjectFiles();
+        m_ProjectGeneration.Sync();
     }
 
     public void Initialize(string editorInstallationPath)
@@ -76,8 +77,15 @@ public class VSCodeScriptEditor : IExternalScriptEditor
 
     public bool OpenFileAtLine(string path, int line)
     {
-        line = line == -1 ? 0 : line;
-        var argument = $"{m_ProjectGeneration.ProjectDirectory}" + (path.Length == 0 ? "" : $" -g {path}:{line}");
+        if (line == -1)
+            line = 1;
+
+
+        var argument = m_ProjectGeneration.ProjectDirectory;
+        if (m_ProjectGeneration.ProjectDirectory != path)
+        {
+            argument += $" -g {path}:{line}";
+        }
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
