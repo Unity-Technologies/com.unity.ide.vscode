@@ -29,6 +29,7 @@ public class VSCodeScriptEditor : IExternalScriptEditor
 {
     VSCodeDiscovery m_Discoverability;
     ProjectGeneration m_ProjectGeneration;
+    static readonly GUIContent resetArguments = EditorGUIUtility.TrTextContent("Reset argument");
     string m_Arguments;
 
     public bool TryGetInstallationForPath(string editorPath, out ScriptEditor.Installation installation)
@@ -59,6 +60,11 @@ public class VSCodeScriptEditor : IExternalScriptEditor
 
     public void OnGUI()
     {
+        Arguments = EditorGUILayout.TextField("External Script Editor Args", Arguments);
+        if (GUILayout.Button(resetArguments, GUILayout.Width(120)))
+        {
+            Arguments = DefaultArgument;
+        }
     }
 
     public void SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
@@ -80,18 +86,33 @@ public class VSCodeScriptEditor : IExternalScriptEditor
         if (line == -1)
             line = 1;
 
-
-        var argument = m_ProjectGeneration.ProjectDirectory;
-        if (m_ProjectGeneration.ProjectDirectory != path)
+        string arguments;
+        if (Arguments != DefaultArgument)
         {
-            argument += $" -g {path}:{line}";
+            if (m_ProjectGeneration.ProjectDirectory != path)
+            {
+                arguments = ParseArgument(Arguments, path, line);
+            }
+            else
+            {
+                arguments = m_ProjectGeneration.ProjectDirectory;
+            }
         }
+        else
+        {
+            arguments = m_ProjectGeneration.ProjectDirectory;
+            if (m_ProjectGeneration.ProjectDirectory != path)
+            {
+                arguments += $" -g {path}:{line}";
+            }
+        }
+
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = EditorPrefs.GetString("kScriptsDefaultApp"),
-                Arguments = argument,
+                Arguments = arguments,
                 UseShellExecute = true,
             }
         };
@@ -100,27 +121,25 @@ public class VSCodeScriptEditor : IExternalScriptEditor
         return true;
     }
 
+    string ParseArgument(string arguments, string path, int line)
+    {
+        var newargument = arguments.Replace("$(ProjectPath)", m_ProjectGeneration.ProjectDirectory);
+        newargument = newargument.Replace("$(File)", path);
+        newargument = newargument.Replace("$(Line)", line.ToString());
+        return newargument;
+    }
+
     public string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line)";
 
     public string Arguments
     {
-        get
-        {
-            if (m_Arguments == null)
-            {
-                m_Arguments = EditorPrefs.GetString("vscode_arguments", DefaultArgument);
-            }
-
-            return m_Arguments;
-        }
+        get => m_Arguments ?? (m_Arguments = EditorPrefs.GetString("vscode_arguments", DefaultArgument));
         set
         {
             m_Arguments = value;
             EditorPrefs.SetString("vscode_arguments", value);
         }
     }
-
-    public bool CustomArgumentsAllowed => true;
 
     public ScriptEditor.Installation[] Installations => m_Discoverability.PathCallback();
 
