@@ -261,7 +261,7 @@ namespace VSCodePackage
             return File.Exists(ProjectFile(island));
         }
 
-        internal void GenerateAndWriteSolutionAndProjects()
+        void GenerateAndWriteSolutionAndProjects()
         {
             // Only synchronize islands that have associated source files and ones that we actually want in the project.
             // This also filters out DLLs coming from .asmdef files in packages.
@@ -282,6 +282,8 @@ namespace VSCodePackage
                 var responseFileData = parseResponseFileData(assembly, responseFilePath);
                 SyncProject(assembly, allAssetProjectParts, responseFileData, allProjectIslands);
             }
+
+            WriteVSCodeSettingsFiles();
         }
 
         ResponseFileData parseResponseFileData(Assembly island, string responseFilePath)
