@@ -12,7 +12,7 @@ public class VSCodeScriptEditor : IExternalScriptEditor
 {
     VSCodeDiscovery m_Discoverability;
     ProjectGeneration m_ProjectGeneration;
-    static readonly GUIContent resetArguments = EditorGUIUtility.TrTextContent("Reset argument");
+    static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent("Reset argument");
     string m_Arguments;
 
     public bool TryGetInstallationForPath(string editorPath, out ScriptEditor.Installation installation)
@@ -37,14 +37,14 @@ public class VSCodeScriptEditor : IExternalScriptEditor
             return true;
         }
 
-        installation = default(ScriptEditor.Installation);
+        installation = default;
         return false;
     }
 
     public void OnGUI()
     {
         Arguments = EditorGUILayout.TextField("External Script Editor Args", Arguments);
-        if (GUILayout.Button(resetArguments, GUILayout.Width(120)))
+        if (GUILayout.Button(k_ResetArguments, GUILayout.Width(120)))
         {
             Arguments = DefaultArgument;
         }
@@ -84,7 +84,7 @@ public class VSCodeScriptEditor : IExternalScriptEditor
         else
         {
             arguments = $@"""{m_ProjectGeneration.ProjectDirectory}""";
-            if (m_ProjectGeneration.ProjectDirectory != path)
+            if (m_ProjectGeneration.ProjectDirectory != path && path.Length != 0)
             {
                 arguments += $@" -g ""{path}"":{line}";
             }
@@ -112,9 +112,8 @@ public class VSCodeScriptEditor : IExternalScriptEditor
         return newargument;
     }
 
-    public string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line)";
-
-    public string Arguments
+    string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line)";
+    string Arguments
     {
         get => m_Arguments ?? (m_Arguments = EditorPrefs.GetString("vscode_arguments", DefaultArgument));
         set

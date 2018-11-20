@@ -521,7 +521,7 @@ namespace VSCodePackage
             if (island.apiCompatibilityLevel == ApiCompatibilityLevel.NET_4_6)
             {
                 targetFrameworkVersion = "v4.7.2";
-                targetLanguageVersion = "7.2";
+                targetLanguageVersion = "latest";
             }
             else
             {
