@@ -1,28 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using JetBrains.Annotations;
+using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEditor;
-using UnityEditor.Compilation;
 using UnityEngine;
 using VSCodePackage;
-
-public class VSCodeSolutionSynchronizer : ScriptableObject
-{
-    static VSCodeScriptEditor s_ScriptEditor;
-
-    [MenuItem("VSCode/Generate")]
-    public static void Test()
-    {
-    }
-
-    public static void RegisterScriptEditor(VSCodeScriptEditor scriptEditor)
-    {
-        s_ScriptEditor = scriptEditor;
-    }
-}
 
 [InitializeOnLoad]
 public class VSCodeScriptEditor : IExternalScriptEditor
@@ -100,10 +83,10 @@ public class VSCodeScriptEditor : IExternalScriptEditor
         }
         else
         {
-            arguments = m_ProjectGeneration.ProjectDirectory;
+            arguments = $@"""{m_ProjectGeneration.ProjectDirectory}""";
             if (m_ProjectGeneration.ProjectDirectory != path)
             {
-                arguments += $" -g {path}:{line}";
+                arguments += $@" -g ""{path}"":{line}";
             }
         }
 
