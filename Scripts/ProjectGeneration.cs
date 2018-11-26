@@ -8,9 +8,10 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using UnityEditor;
 using UnityEditor.Compilation;
+using UnityEditor.PackageManager;
+using UnityEditor.Scripting.Compilers;
 using UnityEditor.VisualStudioIntegration;
 using UnityEngine;
-using VSCodePackage.ResponseFiles;
 
 namespace VSCodePackage
 {
@@ -270,8 +271,6 @@ namespace VSCodePackage
 
             var allAssetProjectParts = GenerateAllAssetProjectParts();
 
-            var responseFilePath = Path.Combine("Assets", "mcs.rsp");
-
             var monoIslands = assemblies.ToList();
 
 
@@ -279,29 +278,36 @@ namespace VSCodePackage
             var allProjectIslands = RelevantIslandsForMode(monoIslands, ModeForCurrentExternalEditor()).ToList();
             foreach (Assembly assembly in allProjectIslands)
             {
-                var responseFileData = parseResponseFileData(assembly, responseFilePath);
+                var responseFileData = ParseResponseFileData(assembly);
                 SyncProject(assembly, allAssetProjectParts, responseFileData, allProjectIslands);
             }
 
             WriteVSCodeSettingsFiles();
         }
 
-        ResponseFileData parseResponseFileData(Assembly island, string responseFilePath)
+        IEnumerable<ResponseFileData> ParseResponseFileData(Assembly assembly)
         {
-            var systemReferenceDirectories = CompilationPipeline.GetSystemReferenceDirectories(island.apiCompatibilityLevel);
+            var systemReferenceDirectories = CompilationPipeline.GetSystemReferenceDirectories(assembly.apiCompatibilityLevel);
 
-            ResponseFileData responseFileData = ResponseFiles.ResponseFiles.ParseResponseFileFromFile(
-                Path.Combine(ProjectDirectory, responseFilePath),
+            Dictionary<string, ResponseFileData> responseFilesData = assembly.responseFiles.ToDictionary(x => x, x => CompilationPipeline.ResolveResponseFile(
+                Path.Combine(ProjectDirectory, x),
                 ProjectDirectory,
-                systemReferenceDirectories);
+                systemReferenceDirectories
+            ));
 
-            if (responseFileData.Errors.Length > 0)
+            Dictionary<string, ResponseFileData> responseFilesWithErrors = responseFilesData.Where(x => x.Value.Errors.Any())
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            if (responseFilesWithErrors.Any())
             {
-                foreach (var error in responseFileData.Errors)
-                    Debug.LogErrorFormat("{0} Parse Error : {1}", responseFilePath, error);
+                foreach (var error in responseFilesWithErrors)
+                foreach (var valueError in error.Value.Errors)
+                {
+                    UnityEngine.Debug.LogErrorFormat("{0} Parse Error : {1}", error.Key, valueError);
+                }
             }
 
-            return responseFileData;
+            return responseFilesData.Select(x => x.Value);
         }
 
         Dictionary<string, string> GenerateAllAssetProjectParts()
@@ -347,19 +353,18 @@ namespace VSCodePackage
             return result;
         }
 
-        bool IsNonInternalizedPackagePath(string file)
+        static bool IsNonInternalizedPackagePath(string file)
         {
-//            var packageInfo = PackageManager.Packages.GetForAssetPath(file); // Maxime has not answered about public API
-//            return packageInfo.source == PackageSource.Embedded || packageInfo.source == PackageSource.Local;
-            return false;
+            var packageInfo = CompilationPipeline.PackageSourceForAssetPath(file);
+            return packageInfo == PackageSource.Embedded || packageInfo == PackageSource.Local;
         }
 
         void SyncProject(Assembly island,
             Dictionary<string, string> allAssetsProjectParts,
-            ResponseFileData responseFileData,
+            IEnumerable<ResponseFileData> responseFilesData,
             List<Assembly> allProjectIslands)
         {
-            SyncProjectFileIfNotChanged(ProjectFile(island), ProjectText(island, ModeForCurrentExternalEditor(), allAssetsProjectParts, responseFileData, allProjectIslands));
+            SyncProjectFileIfNotChanged(ProjectFile(island), ProjectText(island, ModeForCurrentExternalEditor(), allAssetsProjectParts, responseFilesData, allProjectIslands));
         }
 
         static void SyncProjectFileIfNotChanged(string path, string newContents)
@@ -393,10 +398,10 @@ namespace VSCodePackage
         string ProjectText(Assembly assembly,
             Mode mode,
             Dictionary<string, string> allAssetsProjectParts,
-            ResponseFileData responseFileData,
+            IEnumerable<ResponseFileData> responseFilesData,
             List<Assembly> allProjectIslands)
         {
-            var projectBuilder = new StringBuilder(ProjectHeader(assembly, responseFileData));
+            var projectBuilder = new StringBuilder(ProjectHeader(assembly, responseFilesData));
             var references = new List<string>();
             var projectReferences = new List<Match>();
             Match match;
@@ -457,7 +462,7 @@ namespace VSCodePackage
                 AppendReference(fullReference, projectBuilder);
             }
 
-            var responseRefs = responseFileData.FullPathReferences.Select(r => r.Assembly);
+            var responseRefs = responseFilesData.SelectMany(x => x.FullPathReferences.Select(r => r));
             foreach (var reference in responseRefs)
             {
                 AppendReference(reference, projectBuilder);
@@ -511,7 +516,7 @@ namespace VSCodePackage
 
         string ProjectHeader(
             Assembly island,
-            ResponseFileData responseFileData
+            IEnumerable<ResponseFileData> responseFilesData
         )
         {
             string targetFrameworkVersion;
@@ -536,14 +541,14 @@ namespace VSCodePackage
                 toolsVersion, productVersion, ProjectGuid(island.outputPath),
                 UnityEditorInternal.InternalEditorUtility.GetEngineAssemblyPath(),
                 UnityEditorInternal.InternalEditorUtility.GetEditorAssemblyPath(),
-                string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Concat(island.defines).Concat(responseFileData.Defines).Distinct().ToArray()),
+                string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Concat(island.defines).Concat(responseFilesData.SelectMany(x => x.Defines)).Distinct().ToArray()),
                 MSBuildNamespaceUri,
                 Path.GetFileNameWithoutExtension(island.outputPath),
                 EditorSettings.projectGenerationRootNamespace,
                 targetFrameworkVersion,
                 targetLanguageVersion,
                 baseDirectory,
-                island.allowUnsafeCode | responseFileData.Unsafe
+                island.allowUnsafeCode | responseFilesData.Any(x => x.Unsafe)
             };
 
             try
