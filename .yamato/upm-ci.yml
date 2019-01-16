@@ -2,4 +2,7 @@ custom_job: upm-ci
 template_version: "1"
 maintainers:
 - '#nicklas'
-
+custom_branches:
+  mode: exclusive # inclusive
+  branches:
+  - scripting/external-script-editor-api

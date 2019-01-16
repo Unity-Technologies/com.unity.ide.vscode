@@ -1,11 +1,11 @@
-name: trunk MacOS TestVSCodePackage Tests Scheduled
+name: scripting_external-script-editor-api MacOS TestVSCodePackage Tests Scheduled
 agent:
   type: Unity::VM::osx
   image: buildfarm/mac:stable
   flavor: m1.mac
 commands:
 - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
-- upm-ci project test --unity-branch trunk --project-path TestVSCodePackage win
+- upm-ci project test --editor-revision 767c35b992f725b8e0ebd3c7c4449c30e978a0e5 --project-path TestVSCodePackage win
 artifacts:
   UTR_Output.zip:
     paths:

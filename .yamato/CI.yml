@@ -14,4 +14,4 @@ artifacts: {}
 variables: {}
 parameters: {}
 dependencies:
-- .yamato/2019.2_Windows_TestVSCodePackage_Tests_ci.yml
+- .yamato/scripting_external-script-editor-api_Windows_TestVSCodePackage_Tests_ci.yml

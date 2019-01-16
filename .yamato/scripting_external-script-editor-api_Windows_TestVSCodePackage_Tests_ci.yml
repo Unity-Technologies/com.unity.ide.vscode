@@ -1,11 +1,11 @@
-name: 2019.2 Windows TestVSCodePackage Tests CI
+name: scripting_external-script-editor-api Windows TestVSCodePackage Tests CI
 agent:
   type: Unity::VM
   image: sdet/gamecode_win10:v0.2.1-91595
   flavor: m1.xlarge
 commands:
 - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
-- upm-ci project test --unity-version 2019.2 --project-path TestVSCodePackage win
+- upm-ci project test --editor-revision 767c35b992f725b8e0ebd3c7c4449c30e978a0e5 --project-path TestVSCodePackage win
 artifacts:
   UTR_Output.zip:
     paths:
