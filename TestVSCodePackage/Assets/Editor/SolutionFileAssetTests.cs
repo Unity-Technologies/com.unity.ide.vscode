@@ -144,16 +144,19 @@ public class SimpleCSharpScript : MonoBehaviour
             Assert.AreEqual(solutionTemplate, solutionContents);
         }
 
+        [SerializeField]
+        string m_propertySection;
+
         [UnityTest]
         public IEnumerator DoesntOverwriteSolutionSettings()
         {
-            string propertySection = @"    GlobalSection(MonoDevelopProperties) = preSolution
+            m_propertySection = @"    GlobalSection(MonoDevelopProperties) = preSolution
         StartupItem = Test.csproj,
     EndGlobalSection";
             string originalText = $@"Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Global
-{propertySection}
+{m_propertySection}
 EndGlobal";
 
             // Pre-seed solution file with MD property section
@@ -165,7 +168,7 @@ EndGlobal";
             m_ProjectGeneration.Sync();
 
             string syncedSolutionText = File.ReadAllText(SolutionFile);
-            StringAssert.Contains(propertySection, syncedSolutionText);
+            StringAssert.Contains(m_propertySection, syncedSolutionText);
         }
 
         [SerializeField]
