@@ -5,9 +5,13 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace VSCodePackage
+namespace VSCodeEditor
 {
-    public class VSCodeDiscovery {
+    public interface IDiscovery {
+        ScriptEditor.Installation[] PathCallback();
+    }
+
+    public class VSCodeDiscovery : IDiscovery {
         List<ScriptEditor.Installation> m_Installations;
 
         public ScriptEditor.Installation[] PathCallback()

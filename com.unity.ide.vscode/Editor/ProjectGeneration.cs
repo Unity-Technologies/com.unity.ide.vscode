@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -10,12 +11,19 @@ using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.PackageManager;
 using UnityEditor.Scripting.Compilers;
-using UnityEditor.VisualStudioIntegration;
 using UnityEngine;
 
-namespace VSCodePackage
+namespace VSCodeEditor
 {
-    public class ProjectGeneration
+    public interface IGenerator {
+        bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles);
+        void Sync();
+        bool HasSolutionBeenGenerated();
+        string SolutionFile();
+        string ProjectDirectory { get; }
+    }
+
+    public class ProjectGeneration : IGenerator
     {
         internal enum ScriptingLanguage
         {
@@ -152,6 +160,11 @@ namespace VSCodePackage
             m_ProjectName = Path.GetFileName(ProjectDirectory);
         }
 
+        public ProjectGeneration(string m_TempDirectory) {
+            ProjectDirectory = m_TempDirectory.Replace('\\', '/');
+            m_ProjectName = Path.GetFileName(ProjectDirectory);
+        }
+
         /// <summary>
         /// Syncs the scripting solution if any affected files are relevant.
         /// </summary>
@@ -164,7 +177,7 @@ namespace VSCodePackage
         /// <param name="reimportedFiles">
         /// A set of files that got reimported
         /// </param>
-        public void SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
+        public bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
         {
             SetupProjectSupportedExtensions();
 
@@ -172,7 +185,9 @@ namespace VSCodePackage
             if (HasSolutionBeenGenerated() && HasFilesBeenModified(affectedFiles, reimportedFiles))
             {
                 Sync();
+                return true;
             }
+            return false;
         }
 
         bool HasFilesBeenModified(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
@@ -191,7 +206,7 @@ namespace VSCodePackage
             GenerateAndWriteSolutionAndProjects();
         }
 
-        bool HasSolutionBeenGenerated()
+        public bool HasSolutionBeenGenerated()
         {
             return File.Exists(SolutionFile());
         }
@@ -206,7 +221,7 @@ namespace VSCodePackage
             string extension = Path.GetExtension(file);
 
             // Exclude files coming from packages except if they are internalized.
-            if (IsNonInternalizedPackagePath(file))
+            if (IsInternalizedPackagePath(file))
             {
                 return false;
             }
@@ -262,7 +277,7 @@ namespace VSCodePackage
             return File.Exists(ProjectFile(island));
         }
 
-        void GenerateAndWriteSolutionAndProjects()
+        public void GenerateAndWriteSolutionAndProjects()
         {
             // Only synchronize islands that have associated source files and ones that we actually want in the project.
             // This also filters out DLLs coming from .asmdef files in packages.
@@ -318,7 +333,7 @@ namespace VSCodePackage
             {
                 // Exclude files coming from packages except if they are internalized.
                 // TODO: We need assets from the assembly API
-                if (IsNonInternalizedPackagePath(asset))
+                if (IsInternalizedPackagePath(asset))
                 {
                     continue;
                 }
@@ -353,13 +368,18 @@ namespace VSCodePackage
             return result;
         }
 
-        static bool IsNonInternalizedPackagePath(string file)
+        static bool IsInternalizedPackagePath(string file)
         {
-            var packageInfo = CompilationPipeline.PackageSourceForAssetPath(file);
-            return packageInfo == PackageSource.Embedded || packageInfo == PackageSource.Local;
+            var packageInfo = CompilationPipeline.PackageInfoForAsset(file);
+            if (packageInfo == null) {
+                return false;
+            }
+            var packageSource = packageInfo.source;
+            return packageSource != PackageSource.Embedded && packageSource != PackageSource.Local;;
         }
 
-        void SyncProject(Assembly island,
+        void SyncProject(
+            Assembly island,
             Dictionary<string, string> allAssetsProjectParts,
             IEnumerable<ResponseFileData> responseFilesData,
             List<Assembly> allProjectIslands)
@@ -714,7 +734,7 @@ namespace VSCodePackage
 
         static IEnumerable<Assembly> RelevantIslandsForMode(IEnumerable<Assembly> islands, Mode mode)
         {
-            IEnumerable<Assembly> relevantIslands = islands.Where(i => mode == Mode.UnityScriptAsUnityProj || ScriptingLanguage.CSharp == ScriptingLanguageFor(i));
+            IEnumerable<Assembly> relevantIslands = islands.Where(i => ScriptingLanguage.CSharp == ScriptingLanguageFor(i));
             return relevantIslands;
         }
 
@@ -878,6 +898,43 @@ namespace VSCodePackage
 
             if (!File.Exists(vsCodeSettingsJson))
                 File.WriteAllText(vsCodeSettingsJson, k_SettingsJson);
+        }
+    }
+
+    public static class SolutionGuidGenerator
+    {
+        public static string GuidForProject(string projectName)
+        {
+            return ComputeGuidHashFor(projectName + "salt");
+        }
+
+        public static string GuidForSolution(string projectName, string sourceFileExtension)
+        {
+            if (sourceFileExtension.ToLower() == "cs")
+                // GUID for a C# class library: http://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs
+                return "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC";
+
+            return ComputeGuidHashFor(projectName);
+        }
+
+        static string ComputeGuidHashFor(string input)
+        {
+            var hash = MD5.Create().ComputeHash(Encoding.Default.GetBytes(input));
+            return HashAsGuid(HashToString(hash));
+        }
+
+        static string HashAsGuid(string hash)
+        {
+            var guid = hash.Substring(0, 8) + "-" + hash.Substring(8, 4) + "-" + hash.Substring(12, 4) + "-" + hash.Substring(16, 4) + "-" + hash.Substring(20, 12);
+            return guid.ToUpper();
+        }
+
+        static string HashToString(byte[] bs)
+        {
+            var sb = new StringBuilder();
+            foreach (byte b in bs)
+                sb.Append(b.ToString("x2"));
+            return sb.ToString();
         }
     }
 }
