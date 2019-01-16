@@ -9,7 +9,7 @@ commands:
 artifacts:
   UTR_Output.zip:
     paths:
-    - utr_output/**/*
+    - '**/automation/**'
 variables: {}
 parameters: {}
 dependencies: []
