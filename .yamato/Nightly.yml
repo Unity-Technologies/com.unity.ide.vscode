@@ -1,0 +1,13 @@
+name: All Nightly Jobs
+agent:
+  type: Unity::VM
+  image: sdet/gamecode_win10:v0.2.1-91595
+  flavor: m1.xlarge
+commands:
+- echo hello
+artifacts: {}
+variables: {}
+parameters: {}
+dependencies:
+- .yamato/trunk_Windows_TestVSCodePackage_Tests_scheduled.yml
+- .yamato/trunk_MacOS_TestVSCodePackage_Tests_scheduled.yml

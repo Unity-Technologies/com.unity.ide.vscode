@@ -1,0 +1,17 @@
+name: All CI Jobs
+agent:
+  type: Unity::VM
+  image: sdet/gamecode_win10:v0.2.1-91595
+  flavor: m1.xlarge
+commands:
+- echo hello
+triggers:
+  branches:
+    only:
+    - /.*/
+    except: []
+artifacts: {}
+variables: {}
+parameters: {}
+dependencies:
+- .yamato/2019.2_Windows_TestVSCodePackage_Tests_ci.yml

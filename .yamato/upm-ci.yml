@@ -1,0 +1,5 @@
+custom_job: upm-ci
+template_version: "1"
+maintainers:
+- '#nicklas'
+
