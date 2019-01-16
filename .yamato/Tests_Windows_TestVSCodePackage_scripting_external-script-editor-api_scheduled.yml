@@ -1,8 +1,8 @@
-name: scripting_external-script-editor-api MacOS TestVSCodePackage Tests Scheduled
+name: Test Windows in TestVSCodePackage for scripting_external-script-editor-api Scheduled
 agent:
-  type: Unity::VM::osx
-  image: buildfarm/mac:stable
-  flavor: m1.mac
+  type: Unity::VM
+  image: sdet/gamecode_win10:v0.2.1-91595
+  flavor: m1.xlarge
 commands:
 - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
 - upm-ci project test --editor-revision fb0f7358b62241dc1b66fece4e6cd499fac4f1be --project-path TestVSCodePackage win

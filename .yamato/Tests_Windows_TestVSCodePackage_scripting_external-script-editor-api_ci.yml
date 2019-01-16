@@ -1,4 +1,4 @@
-name: scripting_external-script-editor-api Windows TestVSCodePackage Tests CI
+name: Test Windows in TestVSCodePackage for scripting_external-script-editor-api CI
 agent:
   type: Unity::VM
   image: sdet/gamecode_win10:v0.2.1-91595
