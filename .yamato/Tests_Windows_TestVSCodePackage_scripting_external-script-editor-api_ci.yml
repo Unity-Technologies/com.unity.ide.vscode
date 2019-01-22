@@ -4,8 +4,8 @@ agent:
   image: sdet/gamecode_win10:v0.2.1-91595
   flavor: m1.xlarge
 commands:
-- npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
-- upm-ci project test --editor-revision fb0f7358b62241dc1b66fece4e6cd499fac4f1be --project-path TestVSCodePackage win
+- npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g
+- upm-ci project test --editor-revision fb0f7358b62241dc1b66fece4e6cd499fac4f1be --project-path TestVSCodePackage
 artifacts:
   UTR_Output.zip:
     paths:

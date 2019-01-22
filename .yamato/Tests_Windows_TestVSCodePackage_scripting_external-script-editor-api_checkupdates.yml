@@ -1,4 +1,4 @@
-name: Test Windows in TestVSCodePackage for scripting_external-script-editor-api Scheduled
+name: Test Windows in TestVSCodePackage for scripting_external-script-editor-api CheckUpdates
 agent:
   type: Unity::VM
   image: sdet/gamecode_win10:v0.2.1-91595
@@ -12,4 +12,5 @@ artifacts:
     - '**/automation/**'
 variables: {}
 parameters: {}
-dependencies: []
+dependencies:
+- .yamato/updatedependencies.yml

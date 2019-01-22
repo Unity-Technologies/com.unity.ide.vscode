@@ -1,8 +1,8 @@
 name: All CI Jobs
 agent:
   type: Unity::VM
-  image: sdet/gamecode_win10:v0.2.1-91595
-  flavor: m1.xlarge
+  image: cds-ops/ubuntu-18.04-agent:stable
+  flavor: m1.large
 commands:
 - echo hello
 triggers:
