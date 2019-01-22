@@ -302,9 +302,9 @@ namespace VSCodeEditor
 
         IEnumerable<ResponseFileData> ParseResponseFileData(Assembly assembly)
         {
-            var systemReferenceDirectories = CompilationPipeline.GetSystemReferenceDirectories(assembly.apiCompatibilityLevel);
+            var systemReferenceDirectories = CompilationPipeline.GetSystemReferenceDirectories(assembly.compilerOptions.ApiCompatibilityLevel);
 
-            Dictionary<string, ResponseFileData> responseFilesData = assembly.responseFiles.ToDictionary(x => x, x => CompilationPipeline.ResolveResponseFile(
+            Dictionary<string, ResponseFileData> responseFilesData = assembly.compilerOptions.ResponseFiles.ToDictionary(x => x, x => CompilationPipeline.ResolveResponseFile(
                 Path.Combine(ProjectDirectory, x),
                 ProjectDirectory,
                 systemReferenceDirectories
@@ -370,7 +370,7 @@ namespace VSCodeEditor
 
         static bool IsInternalizedPackagePath(string file)
         {
-            var packageInfo = CompilationPipeline.PackageInfoForAsset(file);
+            var packageInfo = Packages.GetForAssetPath(file);
             if (packageInfo == null) {
                 return false;
             }
@@ -476,8 +476,6 @@ namespace VSCodeEditor
                 }
 
                 string fullReference = Path.IsPathRooted(reference) ? reference : Path.Combine(ProjectDirectory, reference);
-                if (CompilationPipeline.IsInternalAssembly(fullReference, isBuildingEditorProject, allAdditionalReferenceFilenames))
-                    continue;
 
                 AppendReference(fullReference, projectBuilder);
             }
@@ -545,7 +543,7 @@ namespace VSCodeEditor
             var productVersion = "10.0.20506";
             const string baseDirectory = ".";
 
-            if (island.apiCompatibilityLevel == ApiCompatibilityLevel.NET_4_6)
+            if (island.compilerOptions.ApiCompatibilityLevel == ApiCompatibilityLevel.NET_4_6)
             {
                 targetFrameworkVersion = "v4.7.2";
                 targetLanguageVersion = "latest";
@@ -568,7 +566,7 @@ namespace VSCodeEditor
                 targetFrameworkVersion,
                 targetLanguageVersion,
                 baseDirectory,
-                island.allowUnsafeCode | responseFilesData.Any(x => x.Unsafe)
+                island.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe)
             };
 
             try

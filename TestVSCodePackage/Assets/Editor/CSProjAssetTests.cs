@@ -201,7 +201,6 @@ public class SimpleCSharpScript : MonoBehaviour
         public IEnumerator EditorReferenceAllOtherScriptProjects()
         {
             CreateFolder($"{Application.dataPath}/Plugins");
-            CreateFolder($"{Application.dataPath}/Editor");
             CreateFolder($"{Application.dataPath}/Plugins/Editor");
             CopyScriptToAssetsFolder(Application.dataPath, "Bar.cs", emptyCSharpScript);
             CopyScriptToAssetsFolder($"{Application.dataPath}/Editor", "Foo.cs", emptyCSharpScript);
@@ -320,7 +319,7 @@ public class SimpleCSharpScript : MonoBehaviour
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
 
-            yield return new RecompileScripts(true);
+            yield return new RecompileScripts(false);
             m_ProjectGeneration.Sync();
 
             string csprojContents = File.ReadAllText(m_CsProjPath);

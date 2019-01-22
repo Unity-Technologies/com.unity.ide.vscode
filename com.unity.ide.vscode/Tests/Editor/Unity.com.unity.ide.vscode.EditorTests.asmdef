@@ -1,0 +1,13 @@
+{
+    "name": "Unity.VSCode.EditorTests",
+    "references": [
+		"Unity.VSCode.Editor"
+	],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

@@ -84,7 +84,7 @@ namespace VSCodeEditor.Editor_spec
 
             yield return new RecompileScripts(false);
 
-            var csprojFileContents = SetupProjectGenerationAndReturnCSProjFilesWithContent().First(x => x.Key.Contains("Assembly-CSharp.csproj")).Value;
+            var csprojFileContents = SetupProjectGenerationAndReturnCSProjFilesWithContent().First(x => x.Key.Contains("Assembly-")).Value;
 
             Assert.IsTrue(ContainsRegex(csprojFileContents, "<DefineConstants>.*;DEF1.*</DefineConstants>"));
             Assert.IsTrue(ContainsRegex(csprojFileContents, "<DefineConstants>.*;DEF2.*</DefineConstants>"));

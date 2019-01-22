@@ -73,17 +73,19 @@ namespace VSCodeEditor {
         {
         }
 
-        public bool OpenFileAtLine(string path, int line)
+        public bool OpenFileAtLineColumn(string path, int line, int column)
         {
             if (line == -1)
                 line = 1;
+            if (column == -1)
+                column = 0;
 
             string arguments;
             if (Arguments != DefaultArgument)
             {
                 if (m_ProjectGeneration.ProjectDirectory != path)
                 {
-                    arguments = ParseArgument(Arguments, path, line);
+                    arguments = ParseArgument(Arguments, path, line, column);
                 }
                 else
                 {
@@ -95,7 +97,7 @@ namespace VSCodeEditor {
                 arguments = $@"""{m_ProjectGeneration.ProjectDirectory}""";
                 if (m_ProjectGeneration.ProjectDirectory != path && path.Length != 0)
                 {
-                    arguments += $@" -g ""{path}"":{line}";
+                    arguments += $@" -g ""{path}"":{line}:{column}";
                 }
             }
 
@@ -113,15 +115,16 @@ namespace VSCodeEditor {
             return true;
         }
 
-        string ParseArgument(string arguments, string path, int line)
+        string ParseArgument(string arguments, string path, int line, int column)
         {
             var newargument = arguments.Replace("$(ProjectPath)", m_ProjectGeneration.ProjectDirectory);
             newargument = newargument.Replace("$(File)", path);
-            newargument = newargument.Replace("$(Line)", line.ToString());
+            newargument = newargument.Replace("$(Line)", line > 0 ? line.ToString() : "1");
+            newargument = newargument.Replace("$(Column)", column >= 0 ? column.ToString() : "0");
             return newargument;
         }
 
-        string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line)";
+        string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
         string Arguments
         {
             get => m_Arguments ?? (m_Arguments = EditorPrefs.GetString("vscode_arguments", DefaultArgument));
