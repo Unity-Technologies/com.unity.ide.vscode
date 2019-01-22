@@ -5,4 +5,4 @@ maintainers:
 custom_branches:
   mode: exclusive # inclusive
   branches:
-  - scripting/external-script-editor-api
+  - scripting/new-codeeditor-api

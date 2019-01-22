@@ -7,7 +7,7 @@ commands:
 - git clone git@github.cds.internal.unity3d.com:henrikp/yamtato-runtime-utils.git
 - sudo npm install npm-check-updates -g
 - pip install unity-downloader-cli --extra-index-url https://artifactory.eu-cph-1.unityops.net/api/pypi/common-python/simple --pre
-- python -u yamtato-runtime-utils/update_editor_revisions_to_latest.py --branches scripting/external-script-editor-api
+- python -u yamtato-runtime-utils/update_editor_revisions_to_latest.py --branches scripting/new-codeeditor-api
 - rm -rf yamtato-runtime-utils
 - ncu -u --packageFile TestVSCodePackage/Packages/manifest.json --registry https://staging-packages.unity.com
 artifacts:

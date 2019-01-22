@@ -1,16 +1,15 @@
-name: Test MacOS in TestVSCodePackage for scripting_external-script-editor-api CheckUpdates
+name: Test MacOS in TestVSCodePackage for scripting_new-codeeditor-api Scheduled
 agent:
   type: Unity::VM::osx
   image: buildfarm/mac:stable
   flavor: m1.mac
 commands:
 - npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g
-- upm-ci project test --editor-revision fb0f7358b62241dc1b66fece4e6cd499fac4f1be --project-path TestVSCodePackage
+- upm-ci project test --editor-revision 83b0a1e1dc05 --project-path TestVSCodePackage
 artifacts:
   UTR_Output.zip:
     paths:
     - '**/automation/**'
 variables: {}
 parameters: {}
-dependencies:
-- .yamato/updatedependencies.yml
+dependencies: []

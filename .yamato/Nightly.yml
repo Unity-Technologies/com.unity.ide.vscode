@@ -9,5 +9,5 @@ artifacts: {}
 variables: {}
 parameters: {}
 dependencies:
-- .yamato/Tests_Windows_TestVSCodePackage_scripting_external-script-editor-api_scheduled.yml
-- .yamato/Tests_MacOS_TestVSCodePackage_scripting_external-script-editor-api_scheduled.yml
+- .yamato/Tests_Windows_TestVSCodePackage_scripting_new-codeeditor-api_scheduled.yml
+- .yamato/Tests_MacOS_TestVSCodePackage_scripting_new-codeeditor-api_scheduled.yml

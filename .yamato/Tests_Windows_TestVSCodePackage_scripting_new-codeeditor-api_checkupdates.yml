@@ -1,11 +1,11 @@
-name: Test Windows in TestVSCodePackage for scripting_external-script-editor-api CheckUpdates
+name: Test Windows in TestVSCodePackage for scripting_new-codeeditor-api CheckUpdates
 agent:
   type: Unity::VM
   image: sdet/gamecode_win10:v0.2.1-91595
   flavor: m1.xlarge
 commands:
 - npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g
-- upm-ci project test --editor-revision fb0f7358b62241dc1b66fece4e6cd499fac4f1be --project-path TestVSCodePackage
+- upm-ci project test --editor-revision 83b0a1e1dc05 --project-path TestVSCodePackage
 artifacts:
   UTR_Output.zip:
     paths:
