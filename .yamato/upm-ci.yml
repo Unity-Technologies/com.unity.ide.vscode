@@ -6,5 +6,3 @@ custom_branches:
   mode: exclusive # inclusive
   branches:
   - scripting/external-script-editor-api
-required_unity_components:
-- webgl
