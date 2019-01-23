@@ -5,7 +5,8 @@ agent:
   flavor: m1.large
 commands:
 - git clone git@github.cds.internal.unity3d.com:henrikp/yamtato-runtime-utils.git
-- NPM_CONFIG_PREFIX=~/.npm-global npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g --no-progress
+- npm config set prefix '~/npm-global'
+- npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g --no-progress
 - python -u yamtato-runtime-utils/upm_ci_wrapper.py scripting/new-codeeditor-api project test --project-path TestVSCodePackage
 artifacts:
   UTR_Output.zip:
