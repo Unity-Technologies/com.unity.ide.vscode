@@ -4,8 +4,9 @@ agent:
   image: buildfarm/mac:stable
   flavor: m1.mac
 commands:
-- npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g
-- upm-ci project test --editor-revision 83b0a1e1dc05 --project-path TestVSCodePackage
+- git clone git@github.cds.internal.unity3d.com:henrikp/yamtato-runtime-utils.git
+- npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g --no-progress
+- python -u yamtato-runtime-utils/upm_ci_wrapper.py scripting/new-codeeditor-api upm-ci project test --extra-unity-components windows --extra-unity-components macos --extra-unity-components linux --project-path TestVSCodePackage
 artifacts:
   UTR_Output.zip:
     paths:

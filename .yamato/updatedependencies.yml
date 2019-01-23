@@ -1,7 +1,7 @@
 name: Update Dependencies
 agent:
   type: Unity::VM
-  image: cds-ops/ubuntu-18.04-agent:stable
+  image: cds-ops/ubuntu-18.04-agent:latest
   flavor: m1.large
 commands:
 - git clone git@github.cds.internal.unity3d.com:henrikp/yamtato-runtime-utils.git

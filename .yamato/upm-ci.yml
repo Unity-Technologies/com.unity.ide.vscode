@@ -6,3 +6,7 @@ custom_branches:
   mode: exclusive # inclusive
   branches:
   - scripting/new-codeeditor-api
+required_unity_components:
+- windows
+- macos
+- linux

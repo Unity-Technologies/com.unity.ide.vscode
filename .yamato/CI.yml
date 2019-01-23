@@ -1,7 +1,7 @@
 name: All CI Jobs
 agent:
   type: Unity::VM
-  image: cds-ops/ubuntu-18.04-agent:stable
+  image: cds-ops/ubuntu-18.04-agent:latest
   flavor: m1.large
 commands:
 - echo hello
@@ -14,4 +14,4 @@ artifacts: {}
 variables: {}
 parameters: {}
 dependencies:
-- .yamato/Tests_Windows_TestVSCodePackage_scripting_new-codeeditor-api_ci.yml
+- .yamato/Tests_Linux_TestVSCodePackage_scripting_new-codeeditor-api_ci.yml

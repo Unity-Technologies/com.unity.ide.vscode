@@ -1,7 +1,7 @@
 name: All Jobs with latest dependencies
 agent:
   type: Unity::VM
-  image: cds-ops/ubuntu-18.04-agent:stable
+  image: cds-ops/ubuntu-18.04-agent:latest
   flavor: m1.large
 commands:
 - git config --global user.email 'henrikp@unity3d.com'
@@ -19,4 +19,5 @@ parameters: {}
 dependencies:
 - .yamato/Tests_Windows_TestVSCodePackage_scripting_new-codeeditor-api_checkupdates.yml
 - .yamato/Tests_MacOS_TestVSCodePackage_scripting_new-codeeditor-api_checkupdates.yml
+- .yamato/Tests_Linux_TestVSCodePackage_scripting_new-codeeditor-api_checkupdates.yml
 - .yamato/updatedependencies.yml
