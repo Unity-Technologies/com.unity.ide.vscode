@@ -15,7 +15,7 @@ namespace VSCodeEditor.Runtime_spec.CSProject
 {
     [TestFixture]
     [Serializable]
-    public class CleanupTest
+    public abstract class CleanupTest
     {
         [SerializeField]
         protected IGenerator m_ProjectGeneration;
@@ -44,7 +44,7 @@ public class SimpleCSharpScript : MonoBehaviour
         }
 
         [UnityTearDown]
-        public IEnumerator TearDown()
+        public virtual IEnumerator TearDown()
         {
             foreach (var pathToDelete in m_GeneratedFiles)
             {
@@ -372,7 +372,7 @@ public class SimpleCSharpScript : MonoBehaviour
             m_ProjectGeneration.Sync();
 
             string csprojContents = File.ReadAllText(m_CsProjPath);
-            StringAssert.Contains(Path.Combine("Assets", "imported.cs"), csprojContents);
+            StringAssert.Contains("Assets\\imported.cs", csprojContents);
         }
 
         [UnityTest]
@@ -385,8 +385,8 @@ public class SimpleCSharpScript : MonoBehaviour
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
 
-            var oldScriptFile = Path.Combine("Assets", "old.cs");
-            var newScriptFile = Path.Combine("Assets", "new.cs");
+            var oldScriptFile = "Assets\\old.cs";
+            var newScriptFile = "Assets\\new.cs";
             string csprojContents = File.ReadAllText(m_CsProjPath);
 
             StringAssert.Contains(oldScriptFile, csprojContents);
@@ -398,8 +398,8 @@ public class SimpleCSharpScript : MonoBehaviour
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
 
-            newScriptFile = Path.Combine("Assets", "new.cs");
-            oldScriptFile = Path.Combine("Assets", "old.cs");
+            oldScriptFile = "Assets\\old.cs";
+            newScriptFile = "Assets\\new.cs";
             csprojContents = File.ReadAllText(m_CsProjPath);
             StringAssert.DoesNotContain(oldScriptFile, csprojContents);
             StringAssert.Contains(newScriptFile, csprojContents);
@@ -417,7 +417,7 @@ public class SimpleCSharpScript : MonoBehaviour
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
             var csprojContents = File.ReadAllText(m_CsProjPath);
-            var scriptAsset = Path.Combine("Assets", "deleted.cs");
+            var scriptAsset = "Assets\\deleted.cs";
             StringAssert.Contains(scriptAsset, csprojContents);
 
             File.Delete(scriptAsset);
@@ -425,138 +425,10 @@ public class SimpleCSharpScript : MonoBehaviour
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
 
-            scriptAsset = Path.Combine("Assets", "deleted.cs");
+            scriptAsset = "Assets\\deleted.cs";
             csprojContents = File.ReadAllText(m_CsProjPath);
             StringAssert.DoesNotContain(scriptAsset, csprojContents);
         }
-
-        [UnityPlatform(RuntimePlatform.WindowsEditor)]
-        [UnityTest]
-        public IEnumerator WhenActiveBuildTargetChanges_Windows()
-        {
-            return AssertSynchronizedWhenActiveBuildTargetChanges(
-                BuildTarget.StandaloneWindows64,
-                "PLATFORM_STANDALONE_WIN",
-                BuildTarget.StandaloneLinux64,
-                "PLATFORM_STANDALONE_LINUX",
-                () => {});
-        }
-
-        [UnityPlatform(RuntimePlatform.OSXEditor)]
-        [UnityTest]
-        public IEnumerator WhenActiveBuildTargetChanges_MacOSX()
-        {
-            return AssertSynchronizedWhenActiveBuildTargetChanges(
-                BuildTarget.StandaloneOSX,
-                "PLATFORM_STANDALONE_OSX",
-                BuildTarget.StandaloneWindows64,
-                "PLATFORM_STANDALONE_WIN",
-                () => {});
-        }
-
-        [UnityPlatform(RuntimePlatform.LinuxEditor)]
-        [UnityTest]
-        public IEnumerator WhenActiveBuildTargetChanges_Linux()
-        {
-            return AssertSynchronizedWhenActiveBuildTargetChanges(
-                BuildTarget.StandaloneLinux64,
-                "PLATFORM_STANDALONE_LINUX",
-                BuildTarget.StandaloneOSX,
-                "PLATFORM_STANDALONE_OSX",
-                () => {});
-        }
-
-        [UnityPlatform(RuntimePlatform.WindowsEditor)]
-        [UnityTest]
-        public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_Windows()
-        {
-            return AssertSynchronizedWhenActiveBuildTargetChanges(
-                BuildTarget.StandaloneWindows64,
-                "PLATFORM_STANDALONE_WIN",
-                BuildTarget.StandaloneLinux64,
-                "PLATFORM_STANDALONE_LINUX",
-                () => { CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript2.cs", " "); });
-        }
-
-        [UnityPlatform(RuntimePlatform.OSXEditor)]
-        [UnityTest]
-        public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_MacOSX()
-        {
-            return AssertSynchronizedWhenActiveBuildTargetChanges(
-                BuildTarget.StandaloneOSX,
-                "PLATFORM_STANDALONE_OSX",
-                BuildTarget.StandaloneWindows64,
-                "PLATFORM_STANDALONE_WIN",
-                () => { CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript2.cs", " "); });
-        }
-
-        [UnityPlatform(RuntimePlatform.LinuxEditor)]
-        [UnityTest]
-        public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_Linux()
-        {
-            return AssertSynchronizedWhenActiveBuildTargetChanges(
-                BuildTarget.StandaloneLinux64,
-                "PLATFORM_STANDALONE_LINUX",
-                BuildTarget.StandaloneOSX,
-                "PLATFORM_STANDALONE_OSX",
-                () => { CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript2.cs", " "); });
-        }
-
-        private IEnumerator AssertSynchronizedWhenActiveBuildTargetChanges(
-            BuildTarget platformTarget,
-            string platformDefine,
-            BuildTarget changeTarget,
-            string changeDefine,
-            Action action)
-        {
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, platformTarget);
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
-
-            yield return new RecompileScripts(true);
-            m_ProjectGeneration.Sync();
-
-            var dir = Directory.GetParent(Application.dataPath).FullName;
-            m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
-
-            AssertProjectContainsDefine(m_CsProjPath, platformDefine);
-
-            action();
-
-            m_LastWritten = DateTime.Now.AddSeconds(-1);
-            File.SetLastWriteTime(m_CsProjPath, m_LastWritten);
-
-            //switch target to another one than the standalone target for the current platform
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, changeTarget);
-
-            yield return new RecompileScripts(true);
-            m_ProjectGeneration.Sync();
-
-            WaitForCondition(() => (File.GetLastWriteTime(m_CsProjPath) > m_LastWritten));
-
-            AssertProjectContainsDefine(m_CsProjPath, changeDefine);
-            yield return null;
-        }
-
-        delegate bool Condition();
-
-        private static void WaitForCondition(Condition condition)
-        {
-            var started = DateTime.Now;
-            while (!condition())
-            {
-                if (DateTime.Now - started > s_Timeout)
-                    throw new TimeoutException(string.Format("Timeout while waiting for c# project to be rewritten for {0} seconds", s_Timeout.TotalSeconds));
-                Thread.Sleep(10);
-            }
-        }
-
-        private void AssertProjectContainsDefine(string csProjPath, string expectedDefine)
-        {
-            var content = File.ReadAllText(csProjPath);
-            Assert.IsTrue(Regex.IsMatch(content, $"<DefineConstants>.*;{expectedDefine}.*</DefineConstants>"));
-        }
-
-        static readonly TimeSpan s_Timeout = TimeSpan.FromSeconds(5);
     }
 
     public class Formatting : CleanupTest
@@ -610,8 +482,154 @@ public class SimpleCSharpScript : MonoBehaviour
             m_ProjectGeneration.Sync();
 
             string csprojContents = File.ReadAllText(m_CsProjPath);
-            StringAssert.DoesNotContain(Path.Combine("Dimmer&", "foo.cs"), csprojContents);
-            StringAssert.Contains(Path.Combine("Dimmer&amp;", "foo.cs"), csprojContents);
+            StringAssert.DoesNotContain("Dimmer&\\foo.cs", csprojContents);
+            StringAssert.Contains("Dimmer&amp;\\foo.cs", csprojContents);
         }
+    }
+
+    public class BuildTarget : CleanupTest
+    {
+        [SerializeField]
+        UnityEditor.BuildTarget m_original;
+
+        public override IEnumerator TearDown()
+        {
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, m_original);
+            return base.TearDown();
+        }
+
+        [UnityPlatform(RuntimePlatform.WindowsEditor)]
+        [UnityTest]
+        public IEnumerator WhenActiveBuildTargetChanges_Windows()
+        {
+            m_original = UnityEditor.BuildTarget.StandaloneWindows64;
+            return AssertSynchronizedWhenActiveBuildTargetChanges(
+                UnityEditor.BuildTarget.StandaloneWindows64,
+                "PLATFORM_STANDALONE_WIN",
+                UnityEditor.BuildTarget.StandaloneLinux64,
+                "PLATFORM_STANDALONE_LINUX",
+                () => {});
+        }
+
+        [UnityPlatform(RuntimePlatform.OSXEditor)]
+        [UnityTest]
+        public IEnumerator WhenActiveBuildTargetChanges_MacOSX()
+        {
+            m_original = UnityEditor.BuildTarget.StandaloneOSX;
+            return AssertSynchronizedWhenActiveBuildTargetChanges(
+                UnityEditor.BuildTarget.StandaloneOSX,
+                "PLATFORM_STANDALONE_OSX",
+                UnityEditor.BuildTarget.StandaloneWindows64,
+                "PLATFORM_STANDALONE_WIN",
+                () => {});
+        }
+
+        [UnityPlatform(RuntimePlatform.LinuxEditor)]
+        [UnityTest]
+        public IEnumerator WhenActiveBuildTargetChanges_Linux()
+        {
+            m_original = UnityEditor.BuildTarget.StandaloneLinux64;
+            return AssertSynchronizedWhenActiveBuildTargetChanges(
+                UnityEditor.BuildTarget.StandaloneLinux64,
+                "PLATFORM_STANDALONE_LINUX",
+                UnityEditor.BuildTarget.StandaloneOSX,
+                "PLATFORM_STANDALONE_OSX",
+                () => {});
+        }
+
+        [UnityPlatform(RuntimePlatform.WindowsEditor)]
+        [UnityTest]
+        public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_Windows()
+        {
+            m_original = UnityEditor.BuildTarget.StandaloneWindows64;
+            return AssertSynchronizedWhenActiveBuildTargetChanges(
+                UnityEditor.BuildTarget.StandaloneWindows64,
+                "PLATFORM_STANDALONE_WIN",
+                UnityEditor.BuildTarget.StandaloneLinux64,
+                "PLATFORM_STANDALONE_LINUX",
+                () => { CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript2.cs", " "); });
+        }
+
+        [UnityPlatform(RuntimePlatform.OSXEditor)]
+        [UnityTest]
+        public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_MacOSX()
+        {
+            m_original = UnityEditor.BuildTarget.StandaloneOSX;
+            return AssertSynchronizedWhenActiveBuildTargetChanges(
+                UnityEditor.BuildTarget.StandaloneOSX,
+                "PLATFORM_STANDALONE_OSX",
+                UnityEditor.BuildTarget.StandaloneWindows64,
+                "PLATFORM_STANDALONE_WIN",
+                () => { CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript2.cs", " "); });
+        }
+
+        [UnityPlatform(RuntimePlatform.LinuxEditor)]
+        [UnityTest]
+        public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_Linux()
+        {
+            m_original = UnityEditor.BuildTarget.StandaloneLinux64;
+            return AssertSynchronizedWhenActiveBuildTargetChanges(
+                UnityEditor.BuildTarget.StandaloneLinux64,
+                "PLATFORM_STANDALONE_LINUX",
+                UnityEditor.BuildTarget.StandaloneOSX,
+                "PLATFORM_STANDALONE_OSX",
+                () => { CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript2.cs", " "); });
+        }
+
+        private IEnumerator AssertSynchronizedWhenActiveBuildTargetChanges(
+            UnityEditor.BuildTarget platformTarget,
+            string platformDefine,
+            UnityEditor.BuildTarget changeTarget,
+            string changeDefine,
+            Action action)
+        {
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, platformTarget);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
+
+            yield return new RecompileScripts(true);
+            m_ProjectGeneration.Sync();
+
+            var dir = Directory.GetParent(Application.dataPath).FullName;
+            m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
+
+            AssertProjectContainsDefine(m_CsProjPath, platformDefine);
+
+            action();
+
+            m_LastWritten = DateTime.Now.AddSeconds(-1);
+            File.SetLastWriteTime(m_CsProjPath, m_LastWritten);
+
+            //switch target to another one than the standalone target for the current platform
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, changeTarget);
+
+            yield return new RecompileScripts(true);
+            m_ProjectGeneration.Sync();
+
+            WaitForCondition(() => (File.GetLastWriteTime(m_CsProjPath) > m_LastWritten));
+
+            AssertProjectContainsDefine(m_CsProjPath, changeDefine);
+            yield return null;
+        }
+
+        private void AssertProjectContainsDefine(string csProjPath, string expectedDefine)
+        {
+            var content = File.ReadAllText(csProjPath);
+            Assert.IsTrue(Regex.IsMatch(content, $"<DefineConstants>.*;{expectedDefine}.*</DefineConstants>"));
+        }
+
+        delegate bool Condition();
+
+        private static void WaitForCondition(Condition condition)
+        {
+            var started = DateTime.Now;
+            while (!condition())
+            {
+                if (DateTime.Now - started > s_Timeout)
+                    throw new TimeoutException(string.Format("Timeout while waiting for c# project to be rewritten for {0} seconds", s_Timeout.TotalSeconds));
+                Thread.Sleep(10);
+            }
+        }
+
+        static readonly TimeSpan s_Timeout = TimeSpan.FromSeconds(5);
     }
 }

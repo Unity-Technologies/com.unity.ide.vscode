@@ -50,11 +50,16 @@ namespace VSCodeEditor
             };
 #endif
             var existingPaths = possiblePaths.Where(VSCodeExists).ToList();
+            if (existingPaths.Count() == 0)
+            {
+                return;
+            }
+
             var lcp = GetLongestCommonPrefix(existingPaths);
-            switch (existingPaths.Count) {
-                case 0:
-                    return;
-                case 1: {
+            switch (existingPaths.Count)
+            {
+                case 1:
+                {
                     var path = existingPaths.First();
                     m_Installations = new List<ScriptEditor.Installation>
                     {

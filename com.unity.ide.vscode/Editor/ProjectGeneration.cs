@@ -436,8 +436,7 @@ namespace VSCodeEditor
                 var fullFile = EscapedRelativePathFor(file);
                 if (".dll" != extension)
                 {
-                    var tagName = "Compile";
-                    projectBuilder.AppendFormat("     <{0} Include=\"{1}\" />{2}", tagName, fullFile, k_WindowsNewline);
+                    projectBuilder.AppendFormat("     <Compile Include=\"{0}\" />{1}", fullFile, k_WindowsNewline);
                 }
                 else
                 {
