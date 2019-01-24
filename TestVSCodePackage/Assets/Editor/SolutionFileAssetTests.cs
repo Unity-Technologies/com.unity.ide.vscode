@@ -132,9 +132,6 @@ public class SimpleCSharpScript : MonoBehaviour
                 @"    GlobalSection(SolutionProperties) = preSolution",
                 @"        HideSolutionNode = FALSE",
                 @"    EndGlobalSection",
-                @"    GlobalSection(MonoDevelopProperties) = preSolution",
-                @"        StartupItem = Assembly-CSharp.csproj",
-                @"    EndGlobalSection",
                 @"EndGlobal",
                 @""
             }).Replace("    ", "\t");
@@ -157,33 +154,6 @@ public class SimpleCSharpScript : MonoBehaviour
         }
 
         [SerializeField]
-        string m_propertySection;
-
-        [UnityTest]
-        public IEnumerator DoesntOverwriteSolutionSettings()
-        {
-            m_propertySection = @"    GlobalSection(MonoDevelopProperties) = preSolution
-        StartupItem = Test.csproj,
-    EndGlobalSection";
-            string originalText = $@"Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Global
-{m_propertySection}
-EndGlobal";
-
-            // Pre-seed solution file with MD property section
-            File.WriteAllText(SolutionFile, originalText);
-
-            CopyScriptToAssetsFolder(Application.dataPath, "foo.cs", " ");
-
-            yield return new RecompileScripts(true);
-            m_ProjectGeneration.Sync();
-
-            string syncedSolutionText = File.ReadAllText(SolutionFile);
-            StringAssert.Contains(m_propertySection, syncedSolutionText);
-        }
-
-        [SerializeField]
         string m_solutionText;
 
         [UnityTest]
@@ -195,8 +165,7 @@ EndGlobal";
             m_ProjectGeneration.Sync();
 
             m_solutionText = File.ReadAllText(SolutionFile);
-            StringAssert.Contains("GlobalSection(MonoDevelopProperties) = preSolution", m_solutionText, "MonoDevelopProperties were not written to the solution");
-            
+
             yield return new RecompileScripts(false);
             m_ProjectGeneration.Sync();
 
@@ -226,7 +195,7 @@ EndGlobal";
             m_ProjectGeneration.Sync();
 
             string syncedSolutionText = File.ReadAllText(SolutionFile);
-            StringAssert.Contains("StartupItem = Assembly-CSharp.csproj", syncedSolutionText, "Expected C# startup project setting");
+            Assert.True(syncedSolutionText.Length != 0);
         }
 
         void CopyScriptToAssetsFolder(string assetPath, string fileName, string content)

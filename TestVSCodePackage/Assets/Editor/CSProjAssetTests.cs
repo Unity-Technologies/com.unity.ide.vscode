@@ -327,33 +327,6 @@ public class SimpleCSharpScript : MonoBehaviour
         }
 
         [UnityTest]
-        public IEnumerator DoesntOverwriteProjectSettings()
-        {
-            var dir = Directory.GetParent(Application.dataPath).FullName;
-            m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
-
-            string originalText = @"<?xml version=""1.0"" encoding=""utf-8""?>
-<Project xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
- <ProjectExtensions>
-  <MonoDevelop />
- </ProjectExtensions>
-</Project>
-";
-
-            File.WriteAllText(m_CsProjPath, originalText);
-            CopyScriptToAssetsFolder(Application.dataPath, "foo.cs", " ");
-
-            yield return new RecompileScripts(true);
-            m_ProjectGeneration.Sync();
-
-            var doc = XMLUtilities.FromFile(m_CsProjPath);
-            var manager = new XmlNamespaceManager(doc.NameTable);
-            manager.AddNamespace("msb", "http://schemas.microsoft.com/developer/msbuild/2003");
-            Assert.AreEqual(1, doc.SelectNodes("/msb:Project/msb:ProjectExtensions/msb:MonoDevelop", manager).Count);
-        }
-
-
-        [UnityTest]
         public IEnumerator OnAssetImport()
         {
             var dir = Directory.GetParent(Application.dataPath).FullName;
@@ -416,11 +389,12 @@ public class SimpleCSharpScript : MonoBehaviour
 
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
-            var csprojContents = File.ReadAllText(m_CsProjPath);
+
             var scriptAsset = "Assets\\deleted.cs";
+            var csprojContents = File.ReadAllText(m_CsProjPath);
             StringAssert.Contains(scriptAsset, csprojContents);
 
-            File.Delete(scriptAsset);
+            File.Delete("Assets/deleted.cs");
             
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();

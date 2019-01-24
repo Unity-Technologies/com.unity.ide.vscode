@@ -6,7 +6,6 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.PackageManager;
@@ -137,7 +136,6 @@ namespace VSCodeEditor
             { ScriptingLanguage.None, ".csproj" },
         };*/
 
-        static readonly Regex k_MonoDevelopPropertyHeader = new Regex(@"^\s*GlobalSection\(MonoDevelopProperties.*\)");
         static readonly Regex k_ScriptReferenceExpression = new Regex(
             @"^Library.ScriptAssemblies.(?<dllname>(?<project>.*)\.dll$)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -145,13 +143,6 @@ namespace VSCodeEditor
         string[] m_ProjectSupportedExtensions = new string[0];
         public string ProjectDirectory { get; private set; }
         readonly string m_ProjectName;
-
-        static readonly string k_DefaultMonoDevelopSolutionProperties = string.Join("\r\n", new[]
-        {
-            "    GlobalSection(MonoDevelopProperties) = preSolution",
-            "        StartupItem = Assembly-CSharp.csproj",
-            "    EndGlobalSection",
-        }).Replace("    ", "\t");
 
         public ProjectGeneration()
         {
@@ -318,7 +309,7 @@ namespace VSCodeEditor
                 foreach (var error in responseFilesWithErrors)
                 foreach (var valueError in error.Value.Errors)
                 {
-                    UnityEngine.Debug.LogErrorFormat("{0} Parse Error : {1}", error.Key, valueError);
+                    UnityEngine.Debug.LogError($"{error.Key} Parse Error : {valueError}");
                 }
             }
 
@@ -346,7 +337,7 @@ namespace VSCodeEditor
                     assemblyName = assemblyName ?? CompilationPipeline.GetAssemblyNameFromScriptPath(asset + ".js");
                     assemblyName = assemblyName ?? CompilationPipeline.GetAssemblyNameFromScriptPath(asset + ".boo");
 
-                    assemblyName = Path.GetFileNameWithoutExtension(assemblyName);
+                    assemblyName = Utility.FileNameWithoutExtension(assemblyName);
 
                     StringBuilder projectBuilder;
 
@@ -356,7 +347,7 @@ namespace VSCodeEditor
                         stringBuilders[assemblyName] = projectBuilder;
                     }
 
-                    projectBuilder.AppendFormat("     <None Include=\"{0}\" />{1}", EscapedRelativePathFor(asset), k_WindowsNewline);
+                    projectBuilder.Append("     <None Include=\"").Append(EscapedRelativePathFor(asset)).Append("\" />").Append(k_WindowsNewline);
                 }
             }
 
@@ -436,7 +427,7 @@ namespace VSCodeEditor
                 var fullFile = EscapedRelativePathFor(file);
                 if (".dll" != extension)
                 {
-                    projectBuilder.AppendFormat("     <Compile Include=\"{0}\" />{1}", fullFile, k_WindowsNewline);
+                    projectBuilder.Append("     <Compile Include=\"").Append(fullFile).Append("\" />").Append(k_WindowsNewline);
                 }
                 else
                 {
@@ -445,7 +436,7 @@ namespace VSCodeEditor
             }
 
             string additionalAssetsForProject;
-            var assemblyName = Path.GetFileNameWithoutExtension(assembly.outputPath);
+            var assemblyName = Utility.FileNameWithoutExtension(assembly.outputPath);
 
             // Append additional non-script files that should be included in project generation.
             if (allAssetsProjectParts.TryGetValue(assemblyName, out additionalAssetsForProject))
@@ -456,7 +447,10 @@ namespace VSCodeEditor
 
             foreach (string reference in islandRefs)
             {
-                if (reference.EndsWith("/UnityEditor.dll") || reference.EndsWith("/UnityEngine.dll") || reference.EndsWith("\\UnityEditor.dll") || reference.EndsWith("\\UnityEngine.dll"))
+                if (reference.EndsWith("/UnityEditor.dll", StringComparison.Ordinal)
+                    || reference.EndsWith("/UnityEngine.dll", StringComparison.Ordinal)
+                    || reference.EndsWith("\\UnityEditor.dll", StringComparison.Ordinal)
+                    || reference.EndsWith("\\UnityEngine.dll", StringComparison.Ordinal))
                     continue;
 
                 match = k_ScriptReferenceExpression.Match(reference);
@@ -498,10 +492,10 @@ namespace VSCodeEditor
 //                    if (targetAssembly != null)
 //                        targetLanguage = (ScriptingLanguage)Enum.Parse(typeof(ScriptingLanguage), targetAssembly.Language.GetLanguageName(), true);
                     referencedProject = reference.Groups["project"].Value;
-                    projectBuilder.AppendFormat("    <ProjectReference Include=\"{0}{1}\">{2}", referencedProject,
-                        GetProjectExtension(), k_WindowsNewline);
-                    projectBuilder.AppendFormat("      <Project>{{{0}}}</Project>", ProjectGuid(Path.Combine("Temp", reference.Groups["project"].Value + ".dll")), k_WindowsNewline);
-                    projectBuilder.AppendFormat("      <Name>{0}</Name>", referencedProject, k_WindowsNewline);
+                    
+                    projectBuilder.Append("    <ProjectReference Include=\"").Append(referencedProject).Append(GetProjectExtension()).Append("\">").Append(k_WindowsNewline);
+                    projectBuilder.Append("      <Project>{").Append(ProjectGuid(Path.Combine("Temp", reference.Groups["project"].Value + ".dll"))).Append("}</Project>").Append(k_WindowsNewline);
+                    projectBuilder.Append("      <Name>").Append(referencedProject).Append("</Name>").Append(k_WindowsNewline);
                     projectBuilder.AppendLine("    </ProjectReference>");
                 }
             }
@@ -516,14 +510,14 @@ namespace VSCodeEditor
             var escapedFullPath = SecurityElement.Escape(fullReference);
             escapedFullPath = escapedFullPath.Replace("\\", "/");
             escapedFullPath = escapedFullPath.Replace("\\\\", "/");
-            projectBuilder.AppendFormat(" <Reference Include=\"{0}\">{1}", Path.GetFileNameWithoutExtension(escapedFullPath), k_WindowsNewline);
-            projectBuilder.AppendFormat(" <HintPath>{0}</HintPath>{1}", escapedFullPath, k_WindowsNewline);
-            projectBuilder.AppendFormat(" </Reference>{0}", k_WindowsNewline);
+            projectBuilder.Append(" <Reference Include=\"").Append(Utility.FileNameWithoutExtension(escapedFullPath)).Append("\">").Append(k_WindowsNewline);
+            projectBuilder.Append(" <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
+            projectBuilder.Append(" </Reference>").Append(k_WindowsNewline);
         }
 
-        string ProjectFile(Assembly island)
+        string ProjectFile(Assembly assembly)
         {
-            return Path.Combine(ProjectDirectory, $"{Path.GetFileNameWithoutExtension(island.outputPath)}.csproj");
+            return Path.Combine(ProjectDirectory, $"{Utility.FileNameWithoutExtension(assembly.outputPath)}.csproj");
         }
 
         public string SolutionFile()
@@ -560,7 +554,7 @@ namespace VSCodeEditor
                 UnityEditorInternal.InternalEditorUtility.GetEditorAssemblyPath(),
                 string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Concat(island.defines).Concat(responseFilesData.SelectMany(x => x.Defines)).Distinct().ToArray()),
                 MSBuildNamespaceUri,
-                Path.GetFileNameWithoutExtension(island.outputPath),
+                Utility.FileNameWithoutExtension(island.outputPath),
                 EditorSettings.projectGenerationRootNamespace,
                 targetFrameworkVersion,
                 targetLanguageVersion,
@@ -597,7 +591,6 @@ namespace VSCodeEditor
                 @"    GlobalSection(SolutionProperties) = preSolution",
                 @"        HideSolutionNode = FALSE",
                 @"    EndGlobalSection",
-                @"{4}",
                 @"EndGlobal",
                 @""
             }).Replace("    ", "\t");
@@ -726,7 +719,7 @@ namespace VSCodeEditor
             var relevantIslands = RelevantIslandsForMode(islands, mode);
             string projectEntries = GetProjectEntries(relevantIslands);
             string projectConfigurations = string.Join(k_WindowsNewline, relevantIslands.Select(i => GetProjectActiveConfigurations(ProjectGuid(i.outputPath))).ToArray());
-            return string.Format(GetSolutionText(), fileversion, vsversion, projectEntries, projectConfigurations, ReadExistingMonoDevelopSolutionProperties());
+            return string.Format(GetSolutionText(), fileversion, vsversion, projectEntries, projectConfigurations);
         }
 
         static IEnumerable<Assembly> RelevantIslandsForMode(IEnumerable<Assembly> islands, Mode mode)
@@ -743,7 +736,7 @@ namespace VSCodeEditor
         {
             var projectEntries = islands.Select(i => string.Format(
                 solutionProjectEntryTemplate,
-                SolutionGuid(i), Path.GetFileNameWithoutExtension(i.outputPath), Path.GetFileName(ProjectFile(i)), ProjectGuid(i.outputPath)
+                SolutionGuid(i), Utility.FileNameWithoutExtension(i.outputPath), Path.GetFileName(ProjectFile(i)), ProjectGuid(i.outputPath)
             ));
 
             return string.Join(k_WindowsNewline, projectEntries.ToArray());
@@ -792,7 +785,7 @@ namespace VSCodeEditor
 
         string ProjectGuid(string assembly)
         {
-            return SolutionGuidGenerator.GuidForProject(m_ProjectName + Path.GetFileNameWithoutExtension(assembly));
+            return SolutionGuidGenerator.GuidForProject(m_ProjectName + Utility.FileNameWithoutExtension(assembly));
         }
 
         string SolutionGuid(Assembly island)
@@ -802,81 +795,7 @@ namespace VSCodeEditor
 
         string ProjectFooter(Assembly island)
         {
-            return string.Format(GetProjectFooterTemplate(), ReadExistingMonoDevelopProjectProperties(island));
-        }
-
-        string ReadExistingMonoDevelopSolutionProperties()
-        {
-            if (!HasSolutionBeenGenerated()) return k_DefaultMonoDevelopSolutionProperties;
-            string[] lines;
-            try
-            {
-                lines = File.ReadAllLines(SolutionFile());
-            }
-            catch (IOException)
-            {
-                return k_DefaultMonoDevelopSolutionProperties;
-            }
-
-            StringBuilder existingOptions = new StringBuilder();
-            bool collecting = false;
-
-            foreach (string line in lines)
-            {
-                if (k_MonoDevelopPropertyHeader.IsMatch(line))
-                {
-                    collecting = true;
-                }
-
-                if (collecting)
-                {
-                    if (line.Contains("EndGlobalSection"))
-                    {
-                        existingOptions.Append(line);
-                        collecting = false;
-                    }
-                    else
-                        existingOptions.AppendFormat("{0}{1}", line, k_WindowsNewline);
-                }
-            }
-
-            if (0 < existingOptions.Length)
-            {
-                return existingOptions.ToString();
-            }
-
-            return k_DefaultMonoDevelopSolutionProperties;
-        }
-
-        string ReadExistingMonoDevelopProjectProperties(Assembly island)
-        {
-            if (!ProjectExists(island)) return string.Empty;
-            XmlDocument doc = new XmlDocument();
-            XmlNamespaceManager manager;
-            try
-            {
-                doc.Load(ProjectFile(island));
-                manager = new XmlNamespaceManager(doc.NameTable);
-                manager.AddNamespace("msb", MSBuildNamespaceUri);
-            }
-            catch (Exception ex)
-            {
-                if (ex is IOException ||
-                    ex is XmlException)
-                    return string.Empty;
-                throw;
-            }
-
-            XmlNodeList nodes = doc.SelectNodes("/msb:Project/msb:ProjectExtensions", manager);
-            if (0 == nodes.Count) return string.Empty;
-
-            StringBuilder sb = new StringBuilder();
-            foreach (XmlNode node in nodes)
-            {
-                sb.AppendLine(node.OuterXml);
-            }
-
-            return sb.ToString();
+            return GetProjectFooterTemplate();
         }
 
         static string GetProjectExtension()

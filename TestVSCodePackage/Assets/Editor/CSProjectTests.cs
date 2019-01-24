@@ -81,10 +81,11 @@ namespace VSCodeEditor.Editor_spec
         {
             CreateFileWithContent("csc.rsp", "-define:DEF1;DEF2 /reference:Assets/MyPlugin.dll", Application.dataPath);
             CreateDll("MyPlugin.dll", Application.dataPath);
+            CreateFileWithContent("test.cs", " ", Application.dataPath);
 
             yield return new RecompileScripts(false);
 
-            var csprojFileContents = SetupProjectGenerationAndReturnCSProjFilesWithContent().First(x => x.Key.Contains("Assembly-")).Value;
+            var csprojFileContents = SetupProjectGenerationAndReturnCSProjFilesWithContent().First(x => x.Key.Contains("Assembly-CSharp.csproj")).Value;
 
             Assert.IsTrue(ContainsRegex(csprojFileContents, "<DefineConstants>.*;DEF1.*</DefineConstants>"));
             Assert.IsTrue(ContainsRegex(csprojFileContents, "<DefineConstants>.*;DEF2.*</DefineConstants>"));
