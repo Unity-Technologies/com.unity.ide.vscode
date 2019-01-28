@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,6 +22,32 @@ namespace VSCodeEditor
         string SolutionFile();
         string ProjectDirectory { get; }
     }
+
+    public interface IAssemblyNameProvider
+    {
+        string GetAssemblyNameFromScriptPath(string path);
+        IEnumerable<Assembly> GetAllAssemblies(Func<string, bool> shouldFileBePartOfSolution);
+        IEnumerable<string> GetAllAssetPaths();
+    }
+
+    class AssemblyNameProvider : IAssemblyNameProvider
+    {
+        public string GetAssemblyNameFromScriptPath(string path)
+        {
+            return CompilationPipeline.GetAssemblyNameFromScriptPath(path);
+        }
+
+        public IEnumerable<Assembly> GetAllAssemblies(Func<string, bool> shouldFileBePartOfSolution)
+        {
+            return CompilationPipeline.GetAssemblies().Where(i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(shouldFileBePartOfSolution));
+        }
+
+        public IEnumerable<string> GetAllAssetPaths()
+        {
+            return AssetDatabase.GetAllAssetPaths();
+        }
+    }
+
 
     public class ProjectGeneration : IGenerator
     {
@@ -129,17 +155,23 @@ namespace VSCodeEditor
         string[] m_ProjectSupportedExtensions = new string[0];
         public string ProjectDirectory { get; }
         readonly string m_ProjectName;
+        readonly IAssemblyNameProvider m_AssemblyNameProvider;
 
         public ProjectGeneration()
         {
             var projectDirectory = Directory.GetParent(Application.dataPath).FullName;
             ProjectDirectory = projectDirectory.Replace('\\', '/');
             m_ProjectName = Path.GetFileName(ProjectDirectory);
+            m_AssemblyNameProvider = new AssemblyNameProvider();
         }
 
-        public ProjectGeneration(string m_TempDirectory) {
-            ProjectDirectory = m_TempDirectory.Replace('\\', '/');
+        public ProjectGeneration(string tempDirectory) : this(tempDirectory, new AssemblyNameProvider()) {
+        }
+
+        public ProjectGeneration(string tempDirectory, IAssemblyNameProvider assemblyNameProvider) {
+            ProjectDirectory = tempDirectory.Replace('\\', '/');
             m_ProjectName = Path.GetFileName(ProjectDirectory);
+            m_AssemblyNameProvider = assemblyNameProvider;
         }
 
         /// <summary>
@@ -251,8 +283,7 @@ namespace VSCodeEditor
         {
             // Only synchronize islands that have associated source files and ones that we actually want in the project.
             // This also filters out DLLs coming from .asmdef files in packages.
-            var assemblies = CompilationPipeline.GetAssemblies().
-                Where(i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(ShouldFileBePartOfSolution));
+            var assemblies = m_AssemblyNameProvider.GetAllAssemblies(ShouldFileBePartOfSolution);
 
             var allAssetProjectParts = GenerateAllAssetProjectParts();
 
@@ -299,7 +330,7 @@ namespace VSCodeEditor
         {
             Dictionary<string, StringBuilder> stringBuilders = new Dictionary<string, StringBuilder>();
 
-            foreach (string asset in AssetDatabase.GetAllAssetPaths())
+            foreach (string asset in m_AssemblyNameProvider.GetAllAssetPaths())
             {
                 // Exclude files coming from packages except if they are internalized.
                 // TODO: We need assets from the assembly API
@@ -312,9 +343,14 @@ namespace VSCodeEditor
                 if (IsSupportedExtension(extension) && ScriptingLanguage.None == ScriptingLanguageFor(extension))
                 {
                     // Find assembly the asset belongs to by adding script extension and using compilation pipeline.
-                    var assemblyName = CompilationPipeline.GetAssemblyNameFromScriptPath(asset + ".cs");
-                    assemblyName = assemblyName ?? CompilationPipeline.GetAssemblyNameFromScriptPath(asset + ".js");
-                    assemblyName = assemblyName ?? CompilationPipeline.GetAssemblyNameFromScriptPath(asset + ".boo");
+                    var assemblyName = m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset + ".cs");
+                    assemblyName = assemblyName ?? m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset + ".js");
+                    assemblyName = assemblyName ?? m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset + ".boo");
+
+                    if (string.IsNullOrEmpty(assemblyName))
+                    {
+                        continue;
+                    }
 
                     assemblyName = Utility.FileNameWithoutExtension(assemblyName);
 
