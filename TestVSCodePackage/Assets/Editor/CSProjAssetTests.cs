@@ -9,7 +9,6 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
-using VSCodeEditor;
 
 namespace VSCodeEditor.Runtime_spec.CSProject
 {
@@ -20,15 +19,15 @@ namespace VSCodeEditor.Runtime_spec.CSProject
         [SerializeField]
         protected IGenerator m_ProjectGeneration;
         [SerializeField]
-        protected List<string> m_GeneratedFiles = new List<string>();
+        List<string> m_GeneratedFiles = new List<string>();
         [SerializeField]
         List<string> m_DirectoriesToDelete = new List<string>();
         [SerializeField]
         protected string m_CsProjPath;
         [SerializeField]
         protected DateTime m_LastWritten;
-        
-        protected const string emptyCSharpScript = @"
+
+        protected const string k_EmptyCSharpScript = @"
 using UnityEngine;
 public class SimpleCSharpScript : MonoBehaviour
 {
@@ -44,7 +43,7 @@ public class SimpleCSharpScript : MonoBehaviour
         }
 
         [UnityTearDown]
-        public virtual IEnumerator TearDown()
+        protected virtual IEnumerator TearDown()
         {
             foreach (var pathToDelete in m_GeneratedFiles)
             {
@@ -93,7 +92,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator Not_WhenNoChanged()
         {
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", k_EmptyCSharpScript);
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
 
@@ -110,7 +109,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator IncludesScripts()
         {
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", k_EmptyCSharpScript);
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
 
@@ -124,7 +123,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator DoesNotIncludeNonCSharpFiles()
         {
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", k_EmptyCSharpScript);
             CopyScriptToAssetsFolder(Application.dataPath, "ClassDiagram1.cd", " ");
             CopyScriptToAssetsFolder(Application.dataPath, "text.txt", " ");
             CopyScriptToAssetsFolder(Application.dataPath, "Test.shader", " ");
@@ -144,8 +143,8 @@ public class SimpleCSharpScript : MonoBehaviour
         public IEnumerator ReferencesPlugins()
         {
             CreateFolder($"{Application.dataPath}/Plugins");
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
-            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins", "Plugin.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", k_EmptyCSharpScript);
+            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins", "Plugin.cs", k_EmptyCSharpScript);
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
 
@@ -168,8 +167,8 @@ public class SimpleCSharpScript : MonoBehaviour
         {
             CreateFolder($"{Application.dataPath}/Plugins");
             CreateFolder($"{Application.dataPath}/Plugins/Editor");
-            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins", "Plugin.cs", emptyCSharpScript);
-            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins/Editor", "EditorPlugin.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins", "Plugin.cs", k_EmptyCSharpScript);
+            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins/Editor", "EditorPlugin.cs", k_EmptyCSharpScript);
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp-Editor-firstpass.csproj");
 
@@ -202,10 +201,10 @@ public class SimpleCSharpScript : MonoBehaviour
         {
             CreateFolder($"{Application.dataPath}/Plugins");
             CreateFolder($"{Application.dataPath}/Plugins/Editor");
-            CopyScriptToAssetsFolder(Application.dataPath, "Bar.cs", emptyCSharpScript);
-            CopyScriptToAssetsFolder($"{Application.dataPath}/Editor", "Foo.cs", emptyCSharpScript);
-            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins", "Plugin.cs", emptyCSharpScript);
-            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins/Editor", "EditorPlugin.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "Bar.cs", k_EmptyCSharpScript);
+            CopyScriptToAssetsFolder($"{Application.dataPath}/Editor", "Foo.cs", k_EmptyCSharpScript);
+            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins", "Plugin.cs", k_EmptyCSharpScript);
+            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins/Editor", "EditorPlugin.cs", k_EmptyCSharpScript);
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp-Editor.csproj");
 
@@ -250,12 +249,12 @@ public class SimpleCSharpScript : MonoBehaviour
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
 
-            var sourceFiles = new string[]
+            var sourceFiles = new[]
             {
                 "Test/Script.cs"
             };
 
-            var textFiles = new string[]
+            var textFiles = new[]
             {
                 "Test/Test.asmdef",
                 "Test/Doc.txt",
@@ -270,7 +269,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator IncludesFilesAddedToAssemblyDefinitions()
         {
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", k_EmptyCSharpScript);
             string uglyDefineString = "THISDEFINEISEXTREMELYUNLIKELYTOEXISTBYDEFAULT; ALSOTHISONE, FINALLYTHISONE";
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, uglyDefineString);
 
@@ -289,8 +288,8 @@ public class SimpleCSharpScript : MonoBehaviour
         public IEnumerator CorrectGuid()
         {
             CreateFolder($"{Application.dataPath}/Plugins");
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
-            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins", "Plugin.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", k_EmptyCSharpScript);
+            CopyScriptToAssetsFolder($"{Application.dataPath}/Plugins", "Plugin.cs", k_EmptyCSharpScript);
 
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
@@ -395,7 +394,7 @@ public class SimpleCSharpScript : MonoBehaviour
             StringAssert.Contains(scriptAsset, csprojContents);
 
             File.Delete("Assets/deleted.cs");
-            
+
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
 
@@ -407,12 +406,10 @@ public class SimpleCSharpScript : MonoBehaviour
 
     public class Formatting : CleanupTest
     {
-        const string kMsBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
-
         [UnityTest]
         public IEnumerator Escape_SpecialCharsInFileName()
         {
-            Dictionary<string, string> awesomeFilenames() {
+            Dictionary<string, string> AwesomeFilenames() {
                 return new Dictionary<string, string>
                 {
                     { @"x & y", @"x &amp; y" },
@@ -420,12 +417,12 @@ public class SimpleCSharpScript : MonoBehaviour
                     // <, > and " are illegal
                 };
             }
-            
+
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
 
             var uniqueId = 0;
-            foreach (var filename in awesomeFilenames().Keys)
+            foreach (var filename in AwesomeFilenames().Keys)
             {
                 var dummyScript = "class Test" + (uniqueId++) + "{}";
                 CopyScriptToAssetsFolder(Application.dataPath, filename + ".cs", dummyScript);
@@ -435,7 +432,7 @@ public class SimpleCSharpScript : MonoBehaviour
             m_ProjectGeneration.Sync();
 
             string csprojContents = File.ReadAllText(m_CsProjPath);
-            foreach (var awesomePair in awesomeFilenames())
+            foreach (var awesomePair in AwesomeFilenames())
             {
                 StringAssert.DoesNotContain(awesomePair.Key, csprojContents);
                 StringAssert.Contains(awesomePair.Value, csprojContents);
@@ -444,7 +441,7 @@ public class SimpleCSharpScript : MonoBehaviour
 
         [UnityTest]
         public IEnumerator Escape_SpecialCharsInPathName()
-        {            
+        {
             var dir = Directory.GetParent(Application.dataPath).FullName;
             m_CsProjPath = Path.Combine(dir, "Assembly-CSharp.csproj");
 
@@ -464,11 +461,11 @@ public class SimpleCSharpScript : MonoBehaviour
     public class BuildTarget : CleanupTest
     {
         [SerializeField]
-        UnityEditor.BuildTarget m_original;
+        UnityEditor.BuildTarget m_Original;
 
-        public override IEnumerator TearDown()
+        protected override IEnumerator TearDown()
         {
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, m_original);
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, m_Original);
             return base.TearDown();
         }
 
@@ -476,7 +473,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator WhenActiveBuildTargetChanges_Windows()
         {
-            m_original = UnityEditor.BuildTarget.StandaloneWindows64;
+            m_Original = UnityEditor.BuildTarget.StandaloneWindows64;
             return AssertSynchronizedWhenActiveBuildTargetChanges(
                 UnityEditor.BuildTarget.StandaloneWindows64,
                 "PLATFORM_STANDALONE_WIN",
@@ -489,7 +486,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator WhenActiveBuildTargetChanges_MacOSX()
         {
-            m_original = UnityEditor.BuildTarget.StandaloneOSX;
+            m_Original = UnityEditor.BuildTarget.StandaloneOSX;
             return AssertSynchronizedWhenActiveBuildTargetChanges(
                 UnityEditor.BuildTarget.StandaloneOSX,
                 "PLATFORM_STANDALONE_OSX",
@@ -502,7 +499,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator WhenActiveBuildTargetChanges_Linux()
         {
-            m_original = UnityEditor.BuildTarget.StandaloneLinux64;
+            m_Original = UnityEditor.BuildTarget.StandaloneLinux64;
             return AssertSynchronizedWhenActiveBuildTargetChanges(
                 UnityEditor.BuildTarget.StandaloneLinux64,
                 "PLATFORM_STANDALONE_LINUX",
@@ -515,7 +512,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_Windows()
         {
-            m_original = UnityEditor.BuildTarget.StandaloneWindows64;
+            m_Original = UnityEditor.BuildTarget.StandaloneWindows64;
             return AssertSynchronizedWhenActiveBuildTargetChanges(
                 UnityEditor.BuildTarget.StandaloneWindows64,
                 "PLATFORM_STANDALONE_WIN",
@@ -528,7 +525,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_MacOSX()
         {
-            m_original = UnityEditor.BuildTarget.StandaloneOSX;
+            m_Original = UnityEditor.BuildTarget.StandaloneOSX;
             return AssertSynchronizedWhenActiveBuildTargetChanges(
                 UnityEditor.BuildTarget.StandaloneOSX,
                 "PLATFORM_STANDALONE_OSX",
@@ -541,7 +538,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator WhenActiveBuildTargetChangesAfterScriptReload_Linux()
         {
-            m_original = UnityEditor.BuildTarget.StandaloneLinux64;
+            m_Original = UnityEditor.BuildTarget.StandaloneLinux64;
             return AssertSynchronizedWhenActiveBuildTargetChanges(
                 UnityEditor.BuildTarget.StandaloneLinux64,
                 "PLATFORM_STANDALONE_LINUX",
@@ -550,7 +547,7 @@ public class SimpleCSharpScript : MonoBehaviour
                 () => { CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript2.cs", " "); });
         }
 
-        private IEnumerator AssertSynchronizedWhenActiveBuildTargetChanges(
+        IEnumerator AssertSynchronizedWhenActiveBuildTargetChanges(
             UnityEditor.BuildTarget platformTarget,
             string platformDefine,
             UnityEditor.BuildTarget changeTarget,
@@ -558,7 +555,7 @@ public class SimpleCSharpScript : MonoBehaviour
             Action action)
         {
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, platformTarget);
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", k_EmptyCSharpScript);
 
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
@@ -579,13 +576,13 @@ public class SimpleCSharpScript : MonoBehaviour
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
 
-            WaitForCondition(() => (File.GetLastWriteTime(m_CsProjPath) > m_LastWritten));
+            WaitForCondition(() => File.GetLastWriteTime(m_CsProjPath) > m_LastWritten);
 
             AssertProjectContainsDefine(m_CsProjPath, changeDefine);
             yield return null;
         }
 
-        private void AssertProjectContainsDefine(string csProjPath, string expectedDefine)
+        static void AssertProjectContainsDefine(string csProjPath, string expectedDefine)
         {
             var content = File.ReadAllText(csProjPath);
             Assert.IsTrue(Regex.IsMatch(content, $"<DefineConstants>.*;{expectedDefine}.*</DefineConstants>"));
@@ -593,17 +590,17 @@ public class SimpleCSharpScript : MonoBehaviour
 
         delegate bool Condition();
 
-        private static void WaitForCondition(Condition condition)
+        static void WaitForCondition(Condition condition)
         {
             var started = DateTime.Now;
             while (!condition())
             {
-                if (DateTime.Now - started > s_Timeout)
-                    throw new TimeoutException(string.Format("Timeout while waiting for c# project to be rewritten for {0} seconds", s_Timeout.TotalSeconds));
+                if (DateTime.Now - started > k_Timeout)
+                    throw new TimeoutException($"Timeout while waiting for c# project to be rewritten for {k_Timeout.TotalSeconds} seconds");
                 Thread.Sleep(10);
             }
         }
 
-        static readonly TimeSpan s_Timeout = TimeSpan.FromSeconds(5);
+        static readonly TimeSpan k_Timeout = TimeSpan.FromSeconds(5);
     }
 }

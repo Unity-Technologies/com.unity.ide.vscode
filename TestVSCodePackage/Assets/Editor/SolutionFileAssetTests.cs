@@ -6,9 +6,6 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using System.IO;
 using System;
-using VSCodeEditor;
-using System.Text.RegularExpressions;
-using System.Threading;
 
 namespace VSCodeEditor.Runtime_spec
 {
@@ -16,8 +13,7 @@ namespace VSCodeEditor.Runtime_spec
     [Serializable]
     public class SolutionProject
     {
-        const string kMsBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
-        const string emptyCSharpScript = @"
+        const string k_EmptyCSharpScript = @"
 using UnityEngine;
 public class SimpleCSharpScript : MonoBehaviour
 {
@@ -32,7 +28,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [SerializeField]
         string m_SolutionPath;
 
-        private static string ProjectName
+        static string ProjectName
         {
             get
             {
@@ -41,7 +37,7 @@ public class SimpleCSharpScript : MonoBehaviour
                 return projectName;
             }
         }
-        private static string SolutionFile = string.Format("{0}.sln", ProjectName);
+        static string s_SolutionFile = $"{ProjectName}.sln";
 
         [SetUp]
         public void SetUp() {
@@ -77,7 +73,7 @@ public class SimpleCSharpScript : MonoBehaviour
             }
 
             m_SolutionPath = m_ProjectGeneration.SolutionFile();
-            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", emptyCSharpScript);
+            CopyScriptToAssetsFolder(Application.dataPath, "SimpleCSharpScript.cs", k_EmptyCSharpScript);
 
             AssetDatabase.Refresh();
             m_ProjectGeneration.Sync();
@@ -154,7 +150,7 @@ public class SimpleCSharpScript : MonoBehaviour
         }
 
         [SerializeField]
-        string m_solutionText;
+        string m_SolutionText;
 
         [UnityTest]
         public IEnumerator ResyncDoesNotChangeSolution()
@@ -164,19 +160,19 @@ public class SimpleCSharpScript : MonoBehaviour
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
 
-            m_solutionText = File.ReadAllText(SolutionFile);
+            m_SolutionText = File.ReadAllText(s_SolutionFile);
 
             yield return new RecompileScripts(false);
             m_ProjectGeneration.Sync();
 
-            string secondSyncSolutionTest = File.ReadAllText(SolutionFile);
-            Assert.AreEqual(m_solutionText, secondSyncSolutionTest, "Solution changed after second sync");
+            string secondSyncSolutionTest = File.ReadAllText(s_SolutionFile);
+            Assert.AreEqual(m_SolutionText, secondSyncSolutionTest, "Solution changed after second sync");
 
             yield return new RecompileScripts(false);
             m_ProjectGeneration.Sync();
 
-            string thirdSyncSolutionText = File.ReadAllText(SolutionFile);
-            Assert.AreEqual(m_solutionText, thirdSyncSolutionText, "Solution changed after third sync");
+            string thirdSyncSolutionText = File.ReadAllText(s_SolutionFile);
+            Assert.AreEqual(m_SolutionText, thirdSyncSolutionText, "Solution changed after third sync");
         }
 
         [UnityTest]
@@ -187,14 +183,14 @@ public class SimpleCSharpScript : MonoBehaviour
 Global
 EndGlobal";
             // Pre-seed solution file with empty property section
-            File.WriteAllText(SolutionFile, originalText);
+            File.WriteAllText(s_SolutionFile, originalText);
 
             CopyScriptToAssetsFolder(Application.dataPath, "foo.cs", " ");
 
             yield return new RecompileScripts(true);
             m_ProjectGeneration.Sync();
 
-            string syncedSolutionText = File.ReadAllText(SolutionFile);
+            string syncedSolutionText = File.ReadAllText(s_SolutionFile);
             Assert.True(syncedSolutionText.Length != 0);
         }
 

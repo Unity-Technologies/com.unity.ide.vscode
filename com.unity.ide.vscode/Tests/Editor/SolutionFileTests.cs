@@ -1,20 +1,18 @@
+using System;
 using Moq;
 using NUnit.Framework;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEditor;
+using UnityEditor.Compilation;
 using UnityEngine;
-using UnityEngine.TestTools;
-using VSCodeEditor;
 
 namespace VSCodeEditor.Editor_spec
 {
     [TestFixture]
     public class SolutionProject
     {
-        private static string ProjectName
+        static string ProjectName
         {
             get
             {
@@ -23,34 +21,34 @@ namespace VSCodeEditor.Editor_spec
                 return projectName;
             }
         }
-        private static string SolutionFile = string.Format("{0}.sln", ProjectName);
+        static string s_SolutionFile = $"{ProjectName}.sln";
 
         [OneTimeSetUp]
         public void OneTimeSetUp() {
-            File.Delete(SolutionFile);
+            File.Delete(s_SolutionFile);
         }
 
         [SetUp]
         public void SetUp() {
-            var m_CodeEditor = new VSCodeScriptEditor(new Mock<IDiscovery>().Object, new ProjectGeneration());
-            m_CodeEditor.CreateIfDoesntExist();
+            var codeEditor = new VSCodeScriptEditor(new Mock<IDiscovery>().Object, new ProjectGeneration());
+            codeEditor.CreateIfDoesntExist();
         }
 
         [TearDown]
         public void Dispose() {
-            File.Delete(SolutionFile);
+            File.Delete(s_SolutionFile);
         }
 
         [Test]
         public void CreatesSolutionFileIfFileDoesntExist()
         {
-            Assert.IsTrue(File.Exists(SolutionFile));
+            Assert.IsTrue(File.Exists(s_SolutionFile));
         }
 
         [Test]
         public void HeaderFormat_MatchesVS2010()
         {
-            string[] syncedSolutionText = File.ReadAllLines(SolutionFile);
+            string[] syncedSolutionText = File.ReadAllLines(s_SolutionFile);
 
             Assert.IsTrue(syncedSolutionText.Length >= 4);
             Assert.AreEqual(@"", syncedSolutionText[0]);
@@ -63,7 +61,7 @@ namespace VSCodeEditor.Editor_spec
         public void IsUTF8Encoded()
         {
             var bom = new byte[4];
-            using (var file = new FileStream(SolutionFile, FileMode.Open, FileAccess.Read))
+            using (var file = new FileStream(s_SolutionFile, FileMode.Open, FileAccess.Read))
             {
                 file.Read(bom, 0, 4);
             }
@@ -81,8 +79,8 @@ namespace VSCodeEditor.Editor_spec
             IEnumerable<string> asmdefAssetImport = new[] { "reimport.asmdef" };
             IEnumerable<string> otherAssetImport = new[] { "reimport.someOther" };
 
-            var projectGeneration = new ProjectGeneration(new FileInfo(SolutionFile).DirectoryName);
-            Assert.IsTrue(File.Exists(SolutionFile));
+            var projectGeneration = new ProjectGeneration(new FileInfo(s_SolutionFile).DirectoryName);
+            Assert.IsTrue(File.Exists(s_SolutionFile));
 
             var precompiledAssemblySyncIfNeeded = projectGeneration.SyncIfNeeded(Enumerable.Empty<string>().ToArray(), precompiledAssetImport);
             var asmdefSyncIfNeeded = projectGeneration.SyncIfNeeded(Enumerable.Empty<string>().ToArray(), asmdefAssetImport);

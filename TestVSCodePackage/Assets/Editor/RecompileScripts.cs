@@ -20,10 +20,10 @@ public class RecompileScripts : IEditModeTestYieldInstruction
         ExpectDomainReload = true;
     }
 
-    public bool ExpectDomainReload { get; private set; }
+    public bool ExpectDomainReload { get; }
     public bool ExpectedPlaymodeState { get; }
-    public bool ExpectScriptCompilation { get; private set; }
-    public bool ExpectScriptCompilationSuccess { get; private set; }
+    public bool ExpectScriptCompilation { get; }
+    public bool ExpectScriptCompilationSuccess { get; }
     public static RecompileScripts Current { get; private set; }
 
     public IEnumerator Perform()

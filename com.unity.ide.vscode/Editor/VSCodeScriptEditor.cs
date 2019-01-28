@@ -15,19 +15,19 @@ namespace VSCodeEditor {
         static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent("Reset argument");
         string m_Arguments;
 
-        static readonly string[] supportedFileNames = new [] { "code.exe", "visualstudiocode.app", "visualstudiocode-insiders.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
+        static readonly string[] k_SupportedFileNames = { "code.exe", "visualstudiocode.app", "visualstudiocode-insiders.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
 
         public bool TryGetInstallationForPath(string editorPath, out ScriptEditor.Installation installation)
         {
             var lowerCasePath = editorPath.ToLower();
             var filename = Path.GetFileName(lowerCasePath).Replace(" ", "");
             var installations = Installations;
-            if (!supportedFileNames.Contains(filename))
+            if (!k_SupportedFileNames.Contains(filename))
             {
                 installation = default;
                 return false;
             }
-            if (installations.Count() == 0)
+            if (!installations.Any())
             {
                 installation = default;
                 return false;
@@ -89,14 +89,9 @@ namespace VSCodeEditor {
             string arguments;
             if (Arguments != DefaultArgument)
             {
-                if (m_ProjectGeneration.ProjectDirectory != path)
-                {
-                    arguments = ParseArgument(Arguments, path, line, column);
-                }
-                else
-                {
-                    arguments = m_ProjectGeneration.ProjectDirectory;
-                }
+                arguments = m_ProjectGeneration.ProjectDirectory != path
+                    ? ParseArgument(Arguments, path, line, column)
+                    : m_ProjectGeneration.ProjectDirectory;
             }
             else
             {

@@ -54,14 +54,14 @@ namespace VSCodeEditor
             return fileNames.Select(fileName => @"Assets\" + fileName.Replace('/', '\\')).ToArray();
         }
 
-        public static IEnumerable<string> SelectAttributeValues(this XmlDocument xmlDocument, string xpathQuery, XmlNamespaceManager xmlNamespaceManager)
+        static IEnumerable<string> SelectAttributeValues(this XmlDocument xmlDocument, string xpathQuery, XmlNamespaceManager xmlNamespaceManager)
         {
             var result = xmlDocument.SelectNodes(xpathQuery, xmlNamespaceManager);
             foreach (XmlAttribute attribute in result)
                 yield return attribute.Value;
         }
 
-        public static IEnumerable<string> SelectInnerTextOfNodes(this XmlDocument xmlDocument, string xpathQuery, XmlNamespaceManager xmlNamespaceManager)
+        static IEnumerable<string> SelectInnerTextOfNodes(this XmlDocument xmlDocument, string xpathQuery, XmlNamespaceManager xmlNamespaceManager)
         {
             return xmlDocument.SelectNodes(xpathQuery, xmlNamespaceManager).Cast<XmlElement>().Select(e => e.InnerText);
         }

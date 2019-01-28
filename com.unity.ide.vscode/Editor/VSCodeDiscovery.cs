@@ -50,7 +50,7 @@ namespace VSCodeEditor
             };
 #endif
             var existingPaths = possiblePaths.Where(VSCodeExists).ToList();
-            if (existingPaths.Count() == 0)
+            if (!existingPaths.Any())
             {
                 return;
             }

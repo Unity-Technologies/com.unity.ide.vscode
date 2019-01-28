@@ -3,7 +3,6 @@ using Moq;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEditor;
-using VSCodeEditor;
 
 namespace VSCodeEditor.Editor_spec
 {
@@ -42,8 +41,8 @@ namespace VSCodeEditor.Editor_spec
             Discover(path);
         }
 
-        private void Discover(string path)
-        {    
+        static void Discover(string path)
+        {
             var discovery = new Mock<IDiscovery>();
             var generator = new Mock<IGenerator>();
 

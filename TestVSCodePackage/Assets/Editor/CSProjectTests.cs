@@ -7,13 +7,8 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using NUnit.Framework;
 using UnityEditor;
-using UnityEditor.Utils;
-using UnityEditorInternal;
 using UnityEngine;
-using UnityEditor.Scripting;
 using UnityEngine.TestTools;
-using VSCodeEditor;
-using UnityEditor.Compilation;
 
 namespace VSCodeEditor.Editor_spec
 {
@@ -171,42 +166,6 @@ namespace VSCodeEditor.Editor_spec
             var csprojFileContents = SetupProjectGenerationAndReturnCSProjFileContent();
 
             Assert.IsTrue(ContainsRegex(csprojFileContents, "<AllowUnsafeBlocks>True</AllowUnsafeBlocks>"));
-        }
-
-        public static XmlDocument FromFile(string fileName)
-        {
-            var csProj = new XmlDocument();
-            csProj.Load(fileName);
-            return csProj;
-        }
-
-        public static IEnumerable<string> SelectAttributeValues(XmlDocument xmlDocument, string xpathQuery, XmlNamespaceManager xmlNamespaceManager)
-        {
-            var result = xmlDocument.SelectNodes(xpathQuery, xmlNamespaceManager);
-            foreach (XmlAttribute attribute in result)
-                yield return attribute.Value;
-        }
-
-        static bool ProjectIncludesSourceFiles(string projectFile, IEnumerable<string> expectedFiles)
-        {
-            var csProj = FromFile(projectFile);
-
-            var xmlNamespaces = new XmlNamespaceManager(csProj.NameTable);
-            xmlNamespaces.AddNamespace("msb", "http://schemas.microsoft.com/developer/msbuild/2003");
-
-            var actualFiles = 
-                SelectAttributeValues(
-                    csProj,
-                    "/msb:Project/msb:ItemGroup/msb:Compile/@Include",
-                    xmlNamespaces)
-                .Concat(
-                    SelectAttributeValues(
-                        csProj,
-                        "/msb:Project/msb:ItemGroup/msb:None/@Include",
-                        xmlNamespaces))
-                .ToArray();
-
-            return expectedFiles.All(actualFiles.Contains);
         }
 
         [Test]
