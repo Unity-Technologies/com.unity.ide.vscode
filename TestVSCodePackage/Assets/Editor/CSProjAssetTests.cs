@@ -365,7 +365,7 @@ public class SimpleCSharpScript : MonoBehaviour
             StringAssert.Contains(oldScriptFile, csprojContents);
             StringAssert.DoesNotContain(newScriptFile, csprojContents);
 
-            File.Delete(oldScriptFile);
+            File.Delete(Path.Combine(Application.dataPath, "old.cs"));
             CopyScriptToAssetsFolder(Application.dataPath, "new.cs", " ");
 
             yield return new RecompileScripts(true);

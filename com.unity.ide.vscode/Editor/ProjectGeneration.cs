@@ -609,7 +609,6 @@ namespace VSCodeEditor
                 @"  <Target Name=""AfterBuild"">",
                 @"  </Target>",
                 @"  -->",
-                @"  {0}",
                 @"</Project>",
                 @""
             });

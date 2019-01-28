@@ -15,31 +15,37 @@ namespace VSCodeEditor {
         static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent("Reset argument");
         string m_Arguments;
 
+        static readonly string[] supportedFileNames = new [] { "code.exe", "visualstudiocode.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
+
         public bool TryGetInstallationForPath(string editorPath, out ScriptEditor.Installation installation)
         {
             var lowerCasePath = editorPath.ToLower();
             var filename = Path.GetFileName(lowerCasePath).Replace(" ", "");
             var installations = Installations;
-            if (filename.StartsWith("code") && installations.Count() != 0)
+            if (!supportedFileNames.Contains(filename))
             {
-                try
+                installation = default;
+                return false;
+            }
+            if (installations.Count() == 0)
+            {
+                installation = default;
+                return false;
+            }
+            try
+            {
+                installation = installations.First(inst => inst.Path == editorPath);
+            }
+            catch (InvalidOperationException)
+            {
+                installation = new ScriptEditor.Installation
                 {
-                    installation = installations.First(inst => inst.Path == editorPath);
-                }
-                catch (InvalidOperationException)
-                {
-                    installation = new ScriptEditor.Installation
-                    {
-                        Name = "Visual Studio Code",
-                        Path = editorPath
-                    };
-                }
-
-                return true;
+                    Name = "Visual Studio Code",
+                    Path = editorPath
+                };
             }
 
-            installation = default;
-            return false;
+            return true;
         }
 
         public void OnGUI()
