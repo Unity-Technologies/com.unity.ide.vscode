@@ -15,7 +15,7 @@ namespace VSCodeEditor {
         static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent("Reset argument");
         string m_Arguments;
 
-        static readonly string[] supportedFileNames = new [] { "code.exe", "visualstudiocode.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
+        static readonly string[] supportedFileNames = new [] { "code.exe", "visualstudiocode.app", "visualstudiocode-insiders.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
 
         public bool TryGetInstallationForPath(string editorPath, out ScriptEditor.Installation installation)
         {

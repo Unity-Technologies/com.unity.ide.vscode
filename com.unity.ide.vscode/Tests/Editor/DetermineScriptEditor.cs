@@ -36,7 +36,7 @@ namespace VSCodeEditor.Editor_spec
         [TestCase("/usr/local/bin/code")]
         [TestCase("/var/lib/flatpak/exports/bin/com.visualstudio.code")]
         [TestCase("/snap/current/bin/code")]
-        //[UnityPlatform(RuntimePlatform.LinuxEditor)]
+        [UnityPlatform(RuntimePlatform.LinuxEditor)]
         public void LinuxPathDiscovery(string path)
         {
             Discover(path);
