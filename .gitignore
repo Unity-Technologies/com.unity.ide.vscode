@@ -449,6 +449,7 @@ Assets/StreamingAssets/crashlytics-build.properties
 
 ### VisualStudioCode ###
 */.vscode/*
+.vscode
 
 ### My stuff ###
 */ValidationSuiteResults/*
