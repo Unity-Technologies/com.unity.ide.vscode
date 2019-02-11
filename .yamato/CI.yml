@@ -1,17 +1,45 @@
-name: All CI Jobs
-agent:
-  type: Unity::VM
-  image: cds-ops/ubuntu-18.04-agent:latest
-  flavor: m1.large
-commands:
-- echo hello
-triggers:
-  branches:
-    only:
-    - /.*/
-    except: []
-artifacts: {}
-variables: {}
-parameters: {}
-dependencies:
-- .yamato/Tests_Linux_TestVSCodePackage_scripting_new-codeeditor-api_ci.yml
+All_CI:
+  name: All CI Jobs
+  agent:
+    type: Unity::VM
+    image: cds-ops/ubuntu-18.04-agent:latest
+    flavor: m1.large
+  commands:
+    - echo hello
+  triggers:
+    branches:
+      only:
+        - /.*/
+      except: []
+  artifacts: {}
+  variables: {}
+  parameters: {}
+  dependencies:
+    - .yamato/Tests_Linux_TestVSCodePackage_scripting_new-codeeditor-api_ci.yml
+
+run_preview_verified_staging:
+  name: Preview and Verified Packages to Staging
+  agent:
+    type: Unity::VM
+    image: package-ci/win10:latest
+    flavor: m1.large
+    name: Runner
+  commands:
+    - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
+    - |
+      cd com.unity.ide.vscode
+      upm-ci package pack
+      upm-ci package publish --registry staging
+    - |
+      cd com.unity.ide.vscode.tests
+      upm-ci package pack
+      upm-ci package publish --registry staging
+  triggers:
+    tags:
+      only:
+        - /^(v|V)[0-9].[0-9].[0-9]/
+  artifacts:
+    Package.zip:
+      paths:
+        - "**/*.tgz"
+        - "**/upm-ci-artifacts/**/*"
