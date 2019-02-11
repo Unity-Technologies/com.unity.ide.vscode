@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.PackageManager;
-using UnityEditor.Scripting.Compilers;
 using UnityEditorInternal;
 using UnityEngine;
 
@@ -303,9 +302,9 @@ namespace VSCodeEditor
 
         IEnumerable<ResponseFileData> ParseResponseFileData(Assembly assembly)
         {
-            var systemReferenceDirectories = CompilationPipeline.GetSystemReferenceDirectories(assembly.compilerOptions.ApiCompatibilityLevel);
+            var systemReferenceDirectories = CompilationPipeline.GetSystemAssemblyDirectories(assembly.compilerOptions.ApiCompatibilityLevel);
 
-            Dictionary<string, ResponseFileData> responseFilesData = assembly.compilerOptions.ResponseFiles.ToDictionary(x => x, x => CompilationPipeline.ResolveResponseFile(
+            Dictionary<string, ResponseFileData> responseFilesData = assembly.compilerOptions.ResponseFiles.ToDictionary(x => x, x => CompilationPipeline.ParseResponseFile(
                 Path.Combine(ProjectDirectory, x),
                 ProjectDirectory,
                 systemReferenceDirectories
@@ -374,7 +373,7 @@ namespace VSCodeEditor
 
         static bool IsInternalizedPackagePath(string file)
         {
-            var packageInfo = Packages.GetForAssetPath(file);
+            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(file);
             if (packageInfo == null) {
                 return false;
             }
@@ -713,7 +712,8 @@ namespace VSCodeEditor
             var projectDir = ProjectDirectory.Replace('/', '\\');
             file = file.Replace('/', '\\');
             var path = SkipPathPrefix(file, projectDir);
-            var packageInfo = Packages.GetForAssetPath(path.Replace('\\', '/'));
+
+            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(path.Replace('\\', '/'));
             if (packageInfo != null) {
                 // We have to normalize the path, because the PackageManagerRemapper assumes
                 // dir seperators will be os specific.

@@ -30,7 +30,6 @@ namespace VSCodeEditor
             }
 
             return path.Substring(indexOfSlash, indexOfDot - indexOfSlash);
-
         }
     }
 }

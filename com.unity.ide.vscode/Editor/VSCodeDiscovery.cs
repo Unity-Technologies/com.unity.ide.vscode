@@ -4,21 +4,22 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Unity.CodeEditor;
 
 namespace VSCodeEditor
 {
     public interface IDiscovery {
-        ScriptEditor.Installation[] PathCallback();
+        CodeEditor.Installation[] PathCallback();
     }
 
     public class VSCodeDiscovery : IDiscovery {
-        List<ScriptEditor.Installation> m_Installations;
+        List<CodeEditor.Installation> m_Installations;
 
-        public ScriptEditor.Installation[] PathCallback()
+        public CodeEditor.Installation[] PathCallback()
         {
             if (m_Installations == null)
             {
-                m_Installations = new List<ScriptEditor.Installation>();
+                m_Installations = new List<CodeEditor.Installation>();
                 FindInstallationPaths();
             }
 
@@ -61,9 +62,9 @@ namespace VSCodeEditor
                 case 1:
                 {
                     var path = existingPaths.First();
-                    m_Installations = new List<ScriptEditor.Installation>
+                    m_Installations = new List<CodeEditor.Installation>
                     {
-                        new ScriptEditor.Installation
+                        new CodeEditor.Installation
                         {
                             Path = path,
                             Name = path.Contains("Insiders")
@@ -79,7 +80,7 @@ namespace VSCodeEditor
                 }
                 default:
                 {
-                    m_Installations = existingPaths.Select(path => new ScriptEditor.Installation
+                    m_Installations = existingPaths.Select(path => new CodeEditor.Installation
                     {
                         Name = $"Visual Studio Code Insiders ({path.Substring(lcp.Length)})",
                         Path = path

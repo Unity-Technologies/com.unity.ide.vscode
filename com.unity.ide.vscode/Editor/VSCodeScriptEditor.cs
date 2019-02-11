@@ -5,10 +5,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
+using Unity.CodeEditor;
 
 namespace VSCodeEditor {
     [InitializeOnLoad]
-    public class VSCodeScriptEditor : IExternalScriptEditor
+    public class VSCodeScriptEditor : IExternalCodeEditor
     {
         IDiscovery m_Discoverability;
         IGenerator m_ProjectGeneration;
@@ -17,7 +18,7 @@ namespace VSCodeEditor {
 
         static readonly string[] k_SupportedFileNames = { "code.exe", "visualstudiocode.app", "visualstudiocode-insiders.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
 
-        public bool TryGetInstallationForPath(string editorPath, out ScriptEditor.Installation installation)
+        public bool TryGetInstallationForPath(string editorPath, out CodeEditor.Installation installation)
         {
             var lowerCasePath = editorPath.ToLower();
             var filename = Path.GetFileName(lowerCasePath).Replace(" ", "");
@@ -38,7 +39,7 @@ namespace VSCodeEditor {
             }
             catch (InvalidOperationException)
             {
-                installation = new ScriptEditor.Installation
+                installation = new CodeEditor.Installation
                 {
                     Name = "Visual Studio Code",
                     Path = editorPath
@@ -65,12 +66,12 @@ namespace VSCodeEditor {
             }
         }
 
-        public void SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
+        public void SyncIfNeeded(string[] addedFiles, string[] deletedFiles, string[] movedFiles, string[] movedFromFiles, string[] importedFiles)
         {
-            m_ProjectGeneration.SyncIfNeeded(affectedFiles, reimportedFiles);
+            m_ProjectGeneration.SyncIfNeeded(addedFiles.Union(deletedFiles).Union(movedFiles).Union(movedFromFiles), importedFiles);
         }
 
-        public void Sync()
+        public void SyncAll()
         {
             m_ProjectGeneration.Sync();
         }
@@ -79,7 +80,7 @@ namespace VSCodeEditor {
         {
         }
 
-        public bool OpenFileAtLineColumn(string path, int line, int column)
+        public bool OpenProject(string path, int line, int column)
         {
             if (line == -1)
                 line = 1;
@@ -90,7 +91,7 @@ namespace VSCodeEditor {
             if (Arguments != DefaultArgument)
             {
                 arguments = m_ProjectGeneration.ProjectDirectory != path
-                    ? ParseArgument(Arguments, path, line, column)
+                    ? CodeEditor.ParseArgument(Arguments, path, line, column)
                     : m_ProjectGeneration.ProjectDirectory;
             }
             else
@@ -108,21 +109,14 @@ namespace VSCodeEditor {
                 {
                     FileName = EditorPrefs.GetString("kScriptsDefaultApp"),
                     Arguments = arguments,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
                     UseShellExecute = true,
                 }
             };
 
             process.Start();
             return true;
-        }
-
-        string ParseArgument(string arguments, string path, int line, int column)
-        {
-            var newargument = arguments.Replace("$(ProjectPath)", m_ProjectGeneration.ProjectDirectory);
-            newargument = newargument.Replace("$(File)", path);
-            newargument = newargument.Replace("$(Line)", line > 0 ? line.ToString() : "1");
-            newargument = newargument.Replace("$(Column)", column >= 0 ? column.ToString() : "0");
-            return newargument;
         }
 
         string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
@@ -136,7 +130,7 @@ namespace VSCodeEditor {
             }
         }
 
-        public ScriptEditor.Installation[] Installations => m_Discoverability.PathCallback();
+        public CodeEditor.Installation[] Installations => m_Discoverability.PathCallback();
 
         public VSCodeScriptEditor(IDiscovery discovery, IGenerator projectGeneration)
         {
@@ -146,7 +140,7 @@ namespace VSCodeEditor {
 
         static VSCodeScriptEditor()
         {
-            ScriptEditor.Register(new VSCodeScriptEditor(new VSCodeDiscovery(), new ProjectGeneration()));
+            CodeEditor.Register(new VSCodeScriptEditor(new VSCodeDiscovery(), new ProjectGeneration()));
         }
     }
 }

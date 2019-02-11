@@ -3,6 +3,7 @@ using Moq;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEditor;
+using Unity.CodeEditor;
 
 namespace VSCodeEditor.Editor_spec
 {
@@ -47,7 +48,7 @@ namespace VSCodeEditor.Editor_spec
             var generator = new Mock<IGenerator>();
 
             discovery.Setup(x => x.PathCallback()).Returns(new [] {
-                new ScriptEditor.Installation
+                new CodeEditor.Installation
                 {
                     Path = path,
                     Name = path.Contains("Insiders") ? "Visual Studio Code Insiders" : "Visual Studio Code"

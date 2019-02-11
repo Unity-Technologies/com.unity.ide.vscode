@@ -103,7 +103,7 @@ namespace VSCodeEditor.Editor_spec
             mock.Setup(x => x.GetAllAssemblies(It.IsAny<Func<string, bool>>())).Returns(new[] { island });
             mock.Setup(x => x.GetAssemblyNameFromScriptPath(It.IsAny<string>())).Returns(string.Empty);
             mock.Setup(x => x.GetAllAssetPaths()).Returns(new[] { "File/Not/In/Assembly.hlsl" });
-            var synchronizer = new ProjectGeneration(Application.dataPath, mock.Object);
+            var synchronizer = new ProjectGeneration(Directory.GetParent(Application.dataPath).FullName, mock.Object);
             synchronizer.Sync();
             var csprojContent = File.ReadAllText(synchronizer.ProjectFile(island));
             StringAssert.DoesNotContain("NotExist.hlsl", csprojContent);
