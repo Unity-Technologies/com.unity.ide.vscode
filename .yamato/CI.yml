@@ -17,8 +17,8 @@ All_CI:
   dependencies:
     - .yamato/Tests_Linux_TestVSCodePackage_scripting_new-codeeditor-api_ci.yml
 
-run_preview_verified_staging:
-  name: Preview and Verified Packages to Staging
+run_staging:
+  name: Packages to Staging
   agent:
     type: Unity::VM
     image: package-ci/win10:latest
@@ -37,5 +37,3 @@ run_preview_verified_staging:
       paths:
         - "**/*.tgz"
         - "**/upm-ci-artifacts/**/*"
-  dependencies:
-    - .yamato/Nightly.yml
