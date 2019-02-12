@@ -26,14 +26,8 @@ run_preview_verified_staging:
     name: Runner
   commands:
     - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - |
-      cd com.unity.ide.vscode
-      upm-ci package pack
-      upm-ci package publish --registry staging
-    - |
-      cd com.unity.ide.vscode.tests
-      upm-ci package pack
-      upm-ci package publish --registry staging
+    - cd com.unity.ide.vscode && upm-ci package pack && upm-ci package publish --registry staging
+    - cd com.unity.ide.vscode.tests && upm-ci package pack && upm-ci package publish --registry staging
   triggers:
     tags:
       only:
@@ -43,3 +37,5 @@ run_preview_verified_staging:
       paths:
         - "**/*.tgz"
         - "**/upm-ci-artifacts/**/*"
+  dependencies:
+    - .yamato/Nightly.yml
