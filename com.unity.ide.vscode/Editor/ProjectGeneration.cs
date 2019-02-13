@@ -373,6 +373,11 @@ namespace VSCodeEditor
 
         static bool IsInternalizedPackagePath(string file)
         {
+            if (string.IsNullOrWhiteSpace(file))
+            {
+                return false;
+            }
+
             var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(file);
             if (packageInfo == null) {
                 return false;
