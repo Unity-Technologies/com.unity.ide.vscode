@@ -1,6 +1,6 @@
 # Code Editor Package for Visual Studio Code
 
-## [0.1.0-preview.10] - 2019-01-01
+## [0.1.0-preview.11] - 2019-01-01
 
 ### This is the first release of *Unity Package vscode_editor*.
 
