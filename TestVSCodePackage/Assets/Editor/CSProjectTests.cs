@@ -48,7 +48,7 @@ namespace VSCodeEditor.Editor_spec
             m_PathsToDelete.Clear();
             m_DirectoriesToDelete.Clear();
 
-            yield return new WaitForDomainReload();
+            yield return new RecompileScripts(false);
         }
 
         [OneTimeTearDown]
