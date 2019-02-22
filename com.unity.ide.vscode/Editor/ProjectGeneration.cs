@@ -153,8 +153,14 @@ namespace VSCodeEditor
 
         string[] m_ProjectSupportedExtensions = new string[0];
         public string ProjectDirectory { get; }
+
         readonly string m_ProjectName;
         readonly IAssemblyNameProvider m_AssemblyNameProvider;
+        const string k_ToolsVersion = "4.0";
+        const string k_ProductVersion = "10.0.20506";
+        const string k_BaseDirectory = ".";
+        const string k_TargetFrameworkVersion = "v4.7.1";
+        const string k_TargetLanguageVersion = "latest";
 
         public ProjectGeneration()
         {
@@ -536,35 +542,18 @@ namespace VSCodeEditor
             IEnumerable<ResponseFileData> responseFilesData
         )
         {
-            string targetFrameworkVersion;
-            string targetLanguageVersion;
-            var toolsVersion = "4.0";
-            var productVersion = "10.0.20506";
-            const string baseDirectory = ".";
-
-            if (island.compilerOptions.ApiCompatibilityLevel == ApiCompatibilityLevel.NET_4_6)
-            {
-                targetFrameworkVersion = "v4.7.1";
-                targetLanguageVersion = "latest";
-            }
-            else
-            {
-                targetFrameworkVersion = "v3.5";
-                targetLanguageVersion = "4";
-            }
-
             var arguments = new object[]
             {
-                toolsVersion, productVersion, ProjectGuid(island.outputPath),
+                k_ToolsVersion, k_ProductVersion, ProjectGuid(island.outputPath),
                 InternalEditorUtility.GetEngineAssemblyPath(),
                 InternalEditorUtility.GetEditorAssemblyPath(),
                 string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Concat(island.defines).Concat(responseFilesData.SelectMany(x => x.Defines)).Distinct().ToArray()),
                 MSBuildNamespaceUri,
                 Utility.FileNameWithoutExtension(island.outputPath),
                 EditorSettings.projectGenerationRootNamespace,
-                targetFrameworkVersion,
-                targetLanguageVersion,
-                baseDirectory,
+                k_TargetFrameworkVersion,
+                k_TargetLanguageVersion,
+                k_BaseDirectory,
                 island.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe)
             };
 
