@@ -11,6 +11,7 @@ using UnityEditor.Compilation;
 using UnityEditor.PackageManager;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace VSCodeEditor
 {
@@ -193,14 +194,19 @@ namespace VSCodeEditor
         /// </param>
         public bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
         {
+            Profiler.BeginSample("SolutionSynchronizerSync");
             SetupProjectSupportedExtensions();
 
             // Don't sync if we haven't synced before
             if (HasSolutionBeenGenerated() && HasFilesBeenModified(affectedFiles, reimportedFiles))
             {
                 Sync();
+
+                Profiler.EndSample();
                 return true;
             }
+
+            Profiler.EndSample();
             return false;
         }
 
