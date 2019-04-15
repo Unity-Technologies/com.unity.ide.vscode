@@ -25,6 +25,10 @@ namespace VSCodeEditor.Editor_spec
         [TestCase(@"C:\Program Files\Microsoft VS Code\Code.exe")]
         [TestCase(@"C:\Program Files\Microsoft VS Code Insiders\bin\code-insiders.cmd")]
         [TestCase(@"C:\Program Files\Microsoft VS Code Insiders\Code.exe")]
+        [TestCase(@"C:\Users\Username\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd")]
+        [TestCase(@"C:\Users\Username\AppData\Local\Programs\Microsoft VS Code\Code.exe")]
+        [TestCase(@"C:\Users\Username\AppData\Local\Programs\Microsoft VS Code Insiders\bin\code-insiders.cmd")]
+        [TestCase(@"C:\Users\Username\AppData\Local\Programs\Microsoft VS Code Insiders\Code.exe")]
         [UnityPlatform(RuntimePlatform.WindowsEditor)]
         public void WindowsPathDiscovery(string path)
         {

@@ -40,6 +40,10 @@ namespace VSCodeEditor
                 GetProgramFiles() + @"/Microsoft VS Code/Code.exe",
                 GetProgramFiles() + @"/Microsoft VS Code Insiders/bin/code-insiders.cmd",
                 GetProgramFiles() + @"/Microsoft VS Code Insiders/Code.exe",
+                GetLocalAppData() + @"/Programs/Microsoft VS Code/bin/code.cmd",
+                GetLocalAppData() + @"/Programs/Microsoft VS Code/Code.exe",
+                GetLocalAppData() + @"/Programs/Microsoft VS Code Insiders/bin/code-insiders.cmd",
+                GetLocalAppData() + @"/Programs/Microsoft VS Code Insiders/Code.exe",
             };
 #else
             {
@@ -95,6 +99,11 @@ namespace VSCodeEditor
         static string GetProgramFiles()
         {
             return Environment.GetEnvironmentVariable("ProgramFiles")?.Replace("\\", "/");
+        }
+
+        static string GetLocalAppData()
+        {
+            return Environment.GetEnvironmentVariable("LOCALAPPDATA")?.Replace("\\", "/");
         }
 #endif
 
