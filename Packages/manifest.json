@@ -3,9 +3,5 @@
 	"com.unity.modules.imgui": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
     "com.unity.test-framework": "1.0.7"
-  },
-  "testables": [
-    "com.unity.ide.vscode",
-    "com.unity.ide.vscode.tests"
-  ]
+  }
 }
