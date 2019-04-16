@@ -79,7 +79,7 @@ run_test_project_{{ platform.name }}_{{ editor.version }}:
   - git clone git@github.cds.internal.unity3d.com:henrikp/yamtato-runtime-utils.git
   - {{ platform.envsetup }}
   - npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g --no-progress
-  - python -u yamtato-runtime-utils/upm_ci_wrapper_with_release.py {{ editor.version }} project test --extra-unity-components windows --extra-unity-components macos --extra-unity-components linux --project-path TestVSCodePackage
+  - python -u yamtato-runtime-utils/upm_ci_wrapper_with_release.py {{ editor.version }} project test --extra-unity-components windows --extra-unity-components macos --extra-unity-components linux
   artifacts:
     logs:
       paths:
