@@ -27,34 +27,11 @@ pack:
     flavor: m1.large
   commands:
     - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - cd com.unity.ide.{{codeeditor}} && upm-ci package pack
-    - cd com.unity.ide.{{codeeditor}}.tests && upm-ci package pack
+    - upm-ci project pack
   artifacts:
     packages:
       paths:
         - "**/upm-ci~/packages/**/*"
-
-{% for editor in editors %}
-{% for platform in platforms %}
-package_test_{{ platform.name }}_{{ editor.version }}:
-  name: Package test com.unity.ide.{{codeeditor}} version {{ editor.version }} on {{ platform.name }}
-  agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor}}
-  commands:
-  - git clone git@github.cds.internal.unity3d.com:henrikp/yamtato-runtime-utils.git
-  - {{ platform.envsetup }}
-  - npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g --no-progress
-  - python -u yamtato-runtime-utils/upm_ci_wrapper_with_release.py {{ editor.version }} package test --package-path com.unity.ide.{{codeeditor}}
-  artifacts:
-    logs.zip:
-      paths:
-      - "**/upm-ci~/test-results/**/*"
-  dependencies:
-  - .yamato/CI.yml#pack
-{% endfor %}
-{% endfor %}
 
 all_package_ci:
   name: All Package CI
@@ -68,7 +45,6 @@ all_package_ci:
   dependencies:
   {% for editor in editors %}
   {% for platform in platforms %}
-  #- .yamato/CI.yml#package_test_{{ platform.name }}_{{ editor.version }}
   - .yamato/CI.yml#run_test_project_{{ platform.name }}_{{ editor.version }}
   {% endfor %}
   {% endfor %}
@@ -88,7 +64,6 @@ commit_ci:
       - "/.*/"
   dependencies:
   {% for editor in editors %}
-  #- .yamato/CI.yml#package_test_linux_{{ editor.version }}
   - .yamato/CI.yml#run_test_project_linux_{{ editor.version }}
   {% endfor %}
 
@@ -106,14 +81,13 @@ run_test_project_{{ platform.name }}_{{ editor.version }}:
   - npm install git+ssh://git@gitlab.cds.internal.unity3d.com:upm-packages/project-templates/upm-template-utils.git#henrik-playground -g --no-progress
   - python -u yamtato-runtime-utils/upm_ci_wrapper_with_release.py {{ editor.version }} project test --extra-unity-components windows --extra-unity-components macos --extra-unity-components linux --project-path TestVSCodePackage
   artifacts:
-    UTR_Output.zip:
+    logs:
       paths:
-      - '**/automation/**'
-  variables: {}
-  parameters: {}
-  dependencies: []
-  {% endfor %}
-  {% endfor %}
+        - "upm-ci~/test-results/**/*"
+  dependencies:
+    - .yamato/CI.yml#pack
+{% endfor %}
+{% endfor %}
 
 
 run_staging:
@@ -132,10 +106,12 @@ run_staging:
       only:
         - /^rc-[0-9].[0-9].[0-9]/
   artifacts:
-    Package.zip:
+    logs:
       paths:
-        - "**/*.tgz"
-        - "**/upm-ci-artifacts/**/*"
+        - "upm-ci~/test-results/**/*"
+    packages:
+      paths:
+        - "upm-ci~/packages/**/*"
   dependencies:
   - .yamato/CI.yml#pack
   - .yamato/CI.yml#all_package_ci
