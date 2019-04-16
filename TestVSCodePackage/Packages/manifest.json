@@ -1,7 +1,5 @@
 {
   "dependencies": {
-    "com.unity.ide.vscode": "file:../../com.unity.ide.vscode",
-    "com.unity.ide.vscode.tests": "file:../../com.unity.ide.vscode.tests",
 	"com.unity.modules.imgui": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
     "com.unity.test-framework": "1.0.7"
