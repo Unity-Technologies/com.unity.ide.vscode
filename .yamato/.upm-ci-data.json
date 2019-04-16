@@ -1,5 +1,7 @@
 {
     "revisions": {
-        "scripting/new-codeeditor-api": "b566ec169cb9"
+        "scripting/new-codeeditor-api": "b566ec169cb9",
+		"trunk": "eec7c1c162e9",
+		"2019.2": "771fb956dd70"
     }
 }
