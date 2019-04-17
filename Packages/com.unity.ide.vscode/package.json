@@ -8,6 +8,6 @@
   "dependencies": {
   },
   "relatedPackages": {
-	"com.unity.ide.vscode.tests": "1.0.3"
+	"com.unity.ide.vscode.tests": "1.0.4"
   }
 }
