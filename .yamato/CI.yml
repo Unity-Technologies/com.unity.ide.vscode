@@ -8,11 +8,11 @@ platforms:
     image: sdet/gamecode_win10:latest
     flavor: m1.large
     envsetup: 
-  - name: mac
-    type: Unity::VM::osx
-    image: buildfarm/mac:stable
-    flavor: m1.mac
-    envsetup: 
+  #- name: mac
+    #type: Unity::VM::osx
+    #image: buildfarm/mac:stable
+    #flavor: m1.mac
+    #envsetup: 
   - name: linux
     type: Unity::VM
     image: cds-ops/ubuntu-18.04-agent:latest

@@ -28,6 +28,12 @@ namespace VSCodeEditor
         string GetAssemblyNameFromScriptPath(string path);
         IEnumerable<Assembly> GetAllAssemblies(Func<string, bool> shouldFileBePartOfSolution);
         IEnumerable<string> GetAllAssetPaths();
+        UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath);
+    }
+
+    public struct TestSettings {
+        public bool ShouldSync;
+        public Dictionary<string, string> SyncPath;
     }
 
     class AssemblyNameProvider : IAssemblyNameProvider
@@ -45,6 +51,11 @@ namespace VSCodeEditor
         public IEnumerable<string> GetAllAssetPaths()
         {
             return AssetDatabase.GetAllAssetPaths();
+        }
+
+        public UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath)
+        {
+            return UnityEditor.PackageManager.PackageInfo.FindForAssetPath(assetPath);
         }
     }
 
@@ -154,6 +165,7 @@ namespace VSCodeEditor
 
         string[] m_ProjectSupportedExtensions = new string[0];
         public string ProjectDirectory { get; }
+        public TestSettings Settings { get; set; }
 
         readonly string m_ProjectName;
         readonly IAssemblyNameProvider m_AssemblyNameProvider;
@@ -163,18 +175,15 @@ namespace VSCodeEditor
         const string k_TargetFrameworkVersion = "v4.7.1";
         const string k_TargetLanguageVersion = "latest";
 
-        public ProjectGeneration()
+        public ProjectGeneration() : this(Directory.GetParent(Application.dataPath).FullName,  new AssemblyNameProvider())
         {
-            var projectDirectory = Directory.GetParent(Application.dataPath).FullName;
-            ProjectDirectory = projectDirectory.Replace('\\', '/');
-            m_ProjectName = Path.GetFileName(ProjectDirectory);
-            m_AssemblyNameProvider = new AssemblyNameProvider();
         }
 
         public ProjectGeneration(string tempDirectory) : this(tempDirectory, new AssemblyNameProvider()) {
         }
 
         public ProjectGeneration(string tempDirectory, IAssemblyNameProvider assemblyNameProvider) {
+            Settings = new TestSettings { ShouldSync = true };
             ProjectDirectory = tempDirectory.Replace('\\', '/');
             m_ProjectName = Path.GetFileName(ProjectDirectory);
             m_AssemblyNameProvider = assemblyNameProvider;
@@ -300,7 +309,6 @@ namespace VSCodeEditor
 
             var monoIslands = assemblies.ToList();
 
-
             SyncSolution(monoIslands);
             var allProjectIslands = RelevantIslandsForMode(monoIslands).ToList();
             foreach (Assembly assembly in allProjectIslands)
@@ -355,8 +363,6 @@ namespace VSCodeEditor
                 {
                     // Find assembly the asset belongs to by adding script extension and using compilation pipeline.
                     var assemblyName = m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset + ".cs");
-                    assemblyName = assemblyName ?? m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset + ".js");
-                    assemblyName = assemblyName ?? m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset + ".boo");
 
                     if (string.IsNullOrEmpty(assemblyName))
                     {
@@ -383,14 +389,14 @@ namespace VSCodeEditor
             return result;
         }
 
-        static bool IsInternalizedPackagePath(string file)
+        bool IsInternalizedPackagePath(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
             {
                 return false;
             }
 
-            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(file);
+            var packageInfo = m_AssemblyNameProvider.FindForAssetPath(file);
             if (packageInfo == null) {
                 return false;
             }
@@ -407,7 +413,7 @@ namespace VSCodeEditor
             SyncProjectFileIfNotChanged(ProjectFile(island), ProjectText(island, allAssetsProjectParts, responseFilesData, allProjectIslands));
         }
 
-        static void SyncProjectFileIfNotChanged(string path, string newContents)
+        void SyncProjectFileIfNotChanged(string path, string newContents)
         {
             if (Path.GetExtension(path) == ".csproj")
             {
@@ -417,22 +423,30 @@ namespace VSCodeEditor
             SyncFileIfNotChanged(path, newContents);
         }
 
-        static void SyncSolutionFileIfNotChanged(string path, string newContents)
+        void SyncSolutionFileIfNotChanged(string path, string newContents)
         {
             //newContents = AssetPostprocessingInternal.CallOnGeneratedSlnSolution(path, newContents); TODO: Call specific code here
 
             SyncFileIfNotChanged(path, newContents);
         }
 
-        static void SyncFileIfNotChanged(string filename, string newContents)
+        void SyncFileIfNotChanged(string filename, string newContents)
         {
             if (File.Exists(filename) &&
                 newContents == File.ReadAllText(filename))
             {
                 return;
             }
-
-            File.WriteAllText(filename, newContents, Encoding.UTF8);
+            if (Settings.ShouldSync)
+            {
+                File.WriteAllText(filename, newContents, Encoding.UTF8);
+            }
+            else
+            {
+                var utf8 = Encoding.UTF8;
+                byte[] utfBytes = utf8.GetBytes(newContents);
+                Settings.SyncPath[filename] = utf8.GetString(utfBytes, 0, utfBytes.Length);  
+            }
         }
 
         string ProjectText(Assembly assembly,
@@ -713,7 +727,7 @@ namespace VSCodeEditor
             file = file.Replace('/', '\\');
             var path = SkipPathPrefix(file, projectDir);
 
-            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(path.Replace('\\', '/'));
+            var packageInfo = m_AssemblyNameProvider.FindForAssetPath(path.Replace('\\', '/'));
             if (packageInfo != null) {
                 // We have to normalize the path, because the PackageManagerRemapper assumes
                 // dir seperators will be os specific.
@@ -726,7 +740,7 @@ namespace VSCodeEditor
 
         static string SkipPathPrefix(string path, string prefix)
         {
-            if (path.StartsWith(prefix))
+            if (path.Replace("\\","/").StartsWith($"{prefix}/"))
                 return path.Substring(prefix.Length + 1);
             return path;
         }

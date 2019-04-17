@@ -17,6 +17,8 @@ namespace VSCodeEditor {
         string m_Arguments;
 
         static readonly string[] k_SupportedFileNames = { "code.exe", "visualstudiocode.app", "visualstudiocode-insiders.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
+        
+        static bool IsOSX => Environment.OSVersion.Platform == PlatformID.Unix;
 
         public bool TryGetInstallationForPath(string editorPath, out CodeEditor.Installation installation)
         {
@@ -103,6 +105,11 @@ namespace VSCodeEditor {
                 }
             }
 
+            if (IsOSX)
+            {
+                return OpenOSX(arguments);
+            }
+
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -116,6 +123,35 @@ namespace VSCodeEditor {
             };
 
             process.Start();
+            return true;
+        }
+
+        private bool OpenOSX(string arguments)
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "open",
+                    Arguments = $"\"{EditorPrefs.GetString("kScriptsDefaultApp")}\" --args {arguments}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                }
+            };
+
+            process.Start();
+
+            while (!process.StandardOutput.EndOfStream)
+            {
+                UnityEngine.Debug.Log(process.StandardOutput.ReadLine());
+            }
+            var errorOutput = process.StandardError.ReadToEnd();
+            if (!string.IsNullOrEmpty(errorOutput))
+            {
+                UnityEngine.Debug.Log("Error: \n" + errorOutput);
+            }
+
             return true;
         }
 
