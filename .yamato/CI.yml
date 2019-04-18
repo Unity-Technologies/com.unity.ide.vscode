@@ -100,8 +100,7 @@ run_staging:
     name: Runner
   commands:
     - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci package publish --package-path com.unity.ide.{{codeeditor}}
-    - upm-ci package publish --package-path com.unity.ide.{{codeeditor}}.tests
+    - upm-ci project publish
   triggers:
     tags:
       only:
