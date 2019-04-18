@@ -317,7 +317,10 @@ namespace VSCodeEditor
                 SyncProject(assembly, allAssetProjectParts, responseFileData, allProjectIslands);
             }
 
-            WriteVSCodeSettingsFiles();
+            if (Settings.ShouldSync)
+            {
+                WriteVSCodeSettingsFiles();
+            }
         }
 
         IEnumerable<ResponseFileData> ParseResponseFileData(Assembly assembly)
