@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -11,14 +11,30 @@ namespace VSCodeEditor {
     [InitializeOnLoad]
     public class VSCodeScriptEditor : IExternalCodeEditor
     {
-        IDiscovery m_Discoverability;
-        IGenerator m_ProjectGeneration;
+        const string vscode_argument = "vscode_arguments";
+        const string vscode_generate_all = "unity_generate_all_csproj";
         static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent("Reset argument");
         string m_Arguments;
+
+        IDiscovery m_Discoverability;
+        IGenerator m_ProjectGeneration;
 
         static readonly string[] k_SupportedFileNames = { "code.exe", "visualstudiocode.app", "visualstudiocode-insiders.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
         
         static bool IsOSX => Environment.OSVersion.Platform == PlatformID.Unix;
+
+        static string GetDefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
+
+        static string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
+        string Arguments
+        {
+            get => m_Arguments ?? (m_Arguments = EditorPrefs.GetString(vscode_argument, DefaultArgument));
+            set
+            {
+                m_Arguments = value;
+                EditorPrefs.SetString(vscode_argument, value);
+            }
+        }
 
         public bool TryGetInstallationForPath(string editorPath, out CodeEditor.Installation installation)
         {
@@ -58,6 +74,14 @@ namespace VSCodeEditor {
             {
                 Arguments = DefaultArgument;
             }
+            var prevGenerate = EditorPrefs.GetBool(vscode_generate_all, false);
+
+            var generateAll = EditorGUILayout.Toggle("Generate all .csproj files.", prevGenerate);
+            if (generateAll != prevGenerate)
+            {
+                EditorPrefs.SetBool(vscode_generate_all, generateAll);
+            }
+            m_ProjectGeneration.GenerateAll(generateAll);
         }
 
         public void CreateIfDoesntExist()
@@ -114,7 +138,7 @@ namespace VSCodeEditor {
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = EditorPrefs.GetString("kScriptsDefaultApp"),
+                    FileName = GetDefaultApp,
                     Arguments = arguments,
                     WindowStyle = ProcessWindowStyle.Hidden,
                     CreateNoWindow = true,
@@ -133,7 +157,7 @@ namespace VSCodeEditor {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "open",
-                    Arguments = $"\"{EditorPrefs.GetString("kScriptsDefaultApp")}\" --args {arguments}",
+                    Arguments = $"\"{GetDefaultApp}\" --args {arguments}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -153,17 +177,6 @@ namespace VSCodeEditor {
             }
 
             return true;
-        }
-
-        string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
-        string Arguments
-        {
-            get => m_Arguments ?? (m_Arguments = EditorPrefs.GetString("vscode_arguments", DefaultArgument));
-            set
-            {
-                m_Arguments = value;
-                EditorPrefs.SetString("vscode_arguments", value);
-            }
         }
 
         public CodeEditor.Installation[] Installations => m_Discoverability.PathCallback();

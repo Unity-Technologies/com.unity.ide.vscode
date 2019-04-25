@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,6 +21,7 @@ namespace VSCodeEditor
         bool HasSolutionBeenGenerated();
         string SolutionFile();
         string ProjectDirectory { get; }
+        void GenerateAll(bool generateAll);
     }
 
     public interface IAssemblyNameProvider
@@ -165,6 +166,13 @@ namespace VSCodeEditor
 
         string[] m_ProjectSupportedExtensions = new string[0];
         public string ProjectDirectory { get; }
+        bool m_ShouldGenerateAll;
+
+        public void GenerateAll(bool generateAll)
+        {
+            m_ShouldGenerateAll = generateAll;
+        }
+
         public TestSettings Settings { get; set; }
 
         readonly string m_ProjectName;
@@ -250,7 +258,7 @@ namespace VSCodeEditor
             string extension = Path.GetExtension(file);
 
             // Exclude files coming from packages except if they are internalized.
-            if (IsInternalizedPackagePath(file))
+            if (!m_ShouldGenerateAll && IsInternalizedPackagePath(file))
             {
                 return false;
             }
@@ -356,7 +364,7 @@ namespace VSCodeEditor
             {
                 // Exclude files coming from packages except if they are internalized.
                 // TODO: We need assets from the assembly API
-                if (IsInternalizedPackagePath(asset))
+                if (!m_ShouldGenerateAll && IsInternalizedPackagePath(asset))
                 {
                     continue;
                 }
