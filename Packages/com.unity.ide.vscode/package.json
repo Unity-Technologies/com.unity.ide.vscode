@@ -4,7 +4,7 @@
   "description": "Code editor integration for supporting Visual Studio Code as code editor for unity. Adds support for generating csproj files for intellisense purposes, auto discovery of installations, etc.",
   "version": "1.0.4",
   "unity": "2019.2",
-  "unityRelease": "0a7",
+  "unityRelease": "0a12",
   "dependencies": {
   },
   "relatedPackages": {
