@@ -1,5 +1,9 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.0.5] - 2019-04-27
+
+Add support for generating all csproj files.
+
 ## [1.0.4] - 2019-04-18
 
 Fix relative package paths.
