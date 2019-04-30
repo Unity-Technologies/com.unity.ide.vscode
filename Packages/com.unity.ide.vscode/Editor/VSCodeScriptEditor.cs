@@ -99,6 +99,7 @@ namespace VSCodeEditor {
 
         public void SyncAll()
         {
+            AssetDatabase.Refresh();
             m_ProjectGeneration.Sync();
         }
 

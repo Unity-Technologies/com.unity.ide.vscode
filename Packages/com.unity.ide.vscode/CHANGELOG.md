@@ -1,5 +1,9 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.0.6] - 2019-04-30
+
+Ensure asset database is refreshed when generating csproj and solution files.
+
 ## [1.0.5] - 2019-04-27
 
 Add support for generating all csproj files.
