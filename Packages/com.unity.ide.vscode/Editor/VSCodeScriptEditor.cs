@@ -159,24 +159,11 @@ namespace VSCodeEditor {
                 {
                     FileName = "open",
                     Arguments = $"\"{GetDefaultApp}\" --args {arguments}",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
+                    UseShellExecute = true,
                 }
             };
 
             process.Start();
-
-            while (!process.StandardOutput.EndOfStream)
-            {
-                UnityEngine.Debug.Log(process.StandardOutput.ReadLine());
-            }
-            var errorOutput = process.StandardError.ReadToEnd();
-            if (!string.IsNullOrEmpty(errorOutput))
-            {
-                UnityEngine.Debug.Log("Error: \n" + errorOutput);
-            }
-
             return true;
         }
 
