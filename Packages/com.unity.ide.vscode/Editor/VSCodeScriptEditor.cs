@@ -48,20 +48,26 @@ namespace VSCodeEditor {
             }
             if (!installations.Any())
             {
-                installation = default;
-                return false;
-            }
-            try
-            {
-                installation = installations.First(inst => inst.Path == editorPath);
-            }
-            catch (InvalidOperationException)
-            {
                 installation = new CodeEditor.Installation
                 {
                     Name = "Visual Studio Code",
                     Path = editorPath
                 };
+            }
+            else
+            {
+                try
+                {
+                    installation = installations.First(inst => inst.Path == editorPath);
+                }
+                catch (InvalidOperationException)
+                {
+                    installation = new CodeEditor.Installation
+                    {
+                        Name = "Visual Studio Code",
+                        Path = editorPath
+                    };
+                }
             }
 
             return true;
