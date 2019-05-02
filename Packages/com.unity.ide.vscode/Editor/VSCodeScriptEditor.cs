@@ -109,10 +109,6 @@ namespace VSCodeEditor {
             m_ProjectGeneration.Sync();
         }
 
-        public void Initialize(string editorInstallationPath)
-        {
-        }
-
         public bool OpenProject(string path, int line, int column)
         {
             if (line == -1)
@@ -183,7 +179,31 @@ namespace VSCodeEditor {
 
         static VSCodeScriptEditor()
         {
-            CodeEditor.Register(new VSCodeScriptEditor(new VSCodeDiscovery(), new ProjectGeneration()));
+            var editor = new VSCodeScriptEditor(new VSCodeDiscovery(), new ProjectGeneration());
+            CodeEditor.Register(editor);
+
+            if (IsVSCodeInstallation(CodeEditor.CurrentEditorInstallation))
+            {
+                editor.CreateIfDoesntExist();
+            }
+        }
+
+        private static bool IsVSCodeInstallation(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return false;
+            }
+
+            var lowerCasePath = path.ToLower();
+            var filename = Path
+                .GetFileName(lowerCasePath.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar))
+                .Replace(" ", "");
+            return k_SupportedFileNames.Contains(filename);
+        }
+
+        public void Initialize(string editorInstallationPath)
+        {
         }
     }
 }
