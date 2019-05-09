@@ -1,9 +1,4 @@
 # Code Editor Package for Visual Studio Code
-##[1.0.7] - 2019-05-02
-
-Ensure project files are loaded when loading package.
-Remove install required in order to recognize editor.
-
 
 ## [1.0.6] - 2019-04-30
 

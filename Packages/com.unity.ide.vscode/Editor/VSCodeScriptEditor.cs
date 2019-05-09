@@ -21,7 +21,7 @@ namespace VSCodeEditor {
 
         static readonly string[] k_SupportedFileNames = { "code.exe", "visualstudiocode.app", "visualstudiocode-insiders.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
         
-        static bool IsOSX => Environment.OSVersion.Platform == PlatformID.Unix;
+        static bool IsOSX => Application.platform == RuntimePlatform.OSXEditor;
 
         static string GetDefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
 
