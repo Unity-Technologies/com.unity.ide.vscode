@@ -454,7 +454,7 @@ Assets/StreamingAssets/crashlytics-build.properties
 .vscode
 
 ### My stuff ###
-*/ValidationSuiteResults/*
+**/ValidationSuiteResults/*
 
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
