@@ -1,5 +1,12 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.0.7] - 2019-05-15
+
+Fix various OSX specific issues.
+Generate project on load if they are not generated.
+Fix path recognition.
+
+
 ## [1.0.6] - 2019-04-30
 
 Ensure asset database is refreshed when generating csproj and solution files.
