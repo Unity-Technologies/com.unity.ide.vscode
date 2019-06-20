@@ -1,0 +1,12 @@
+bokken_template_version: 2017-06-01
+
+name: "VSCODE"
+description: Tooling for the scripting team - VSCODE
+
+resources:
+
+  - name: cpu
+    type: Unity::VM
+    image: sdet/scripting-toolbox-vscode:latest
+    flavor: b1.large   # cannot use smaller for windows VMs
+    num_instances: 1
