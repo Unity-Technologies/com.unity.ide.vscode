@@ -1,5 +1,11 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.1.0] - 2019-08-07
+
+Adds support for choosing extensions to be opened with VSCode. This can be done through the GUI in Preferences.
+Avoids opening all extensions after the change in core unity.
+
+
 ## [1.0.7] - 2019-05-15
 
 Fix various OSX specific issues.

@@ -18,7 +18,9 @@ platforms:
     image: cds-ops/ubuntu-18.04-agent:latest
     flavor: m1.large
     envsetup: npm config set prefix '~/npm-global'
+
 ---
+
 pack:
   name: Pack
   agent:
@@ -33,21 +35,6 @@ pack:
       paths:
         - "**/upm-ci~/packages/**/*"
 
-all_package_ci:
-  name: All Package CI
-  agent:
-    name: whatever
-    type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.small
-  commands:
-    - dir
-  dependencies:
-  {% for editor in editors %}
-  {% for platform in platforms %}
-  - .yamato/CI.yml#run_test_project_{{ platform.name }}_{{ editor.version }}
-  {% endfor %}
-  {% endfor %}
 
 commit_ci:
   name: CI Per Commit
@@ -57,7 +44,7 @@ commit_ci:
     image: cds-ops/ubuntu-18.04-agent:latest
     flavor: b1.small
   commands:
-    - dir
+    - true
   triggers:
     branches:
       only:
@@ -66,6 +53,7 @@ commit_ci:
   {% for editor in editors %}
   - .yamato/CI.yml#run_test_project_linux_{{ editor.version }}
   {% endfor %}
+
 
 {% for editor in editors %}
 {% for platform in platforms %}
@@ -91,28 +79,58 @@ run_test_project_{{ platform.name }}_{{ editor.version }}:
 {% endfor %}
 
 
-run_staging:
-  name: Packages to Staging
+# CI pipeline
+
+prepare_release:
+  name: Prepare release
+  triggers:
+    branches:
+      only:
+        - next/master
+  agent:
+    type: Unity::VM
+    image: cds-ops/ubuntu-18.04-agent:latest
+    flavor: m1.large
+  commands:
+    - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
+    - python3 /tmp/Nicklas-CI/prepare_release.py
+    - git push origin HEAD:refs/heads/publish-release
+
+
+publish_release:
+  name: Publish release
+  triggers:
+    branches:
+      only:
+        - publish-release
+  dependencies:
+    - .yamato/CI.yml#pack
+    {% for editor in editors %}
+    {% for platform in platforms %}
+    - .yamato/CI.yml#run_test_project_{{ platform.name }}_{{ editor.version }}
+    {% endfor %}
+    {% endfor %}
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
     flavor: m1.large
-    name: Runner
   commands:
-    - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci package publish --package-path Packages/com.unity.ide.{{codeeditor}}
-    - upm-ci package publish --package-path Packages/com.unity.ide.{{codeeditor}}.tests
+    - npm install upm-ci-utils --registry https://api.bintray.com/npm/unity/unity-npm
+    - node node_modules/upm-ci-utils package publish --package-path Packages/com.unity.ide.{{codeeditor}}
+    - node node_modules/upm-ci-utils package publish --package-path Packages/com.unity.ide.{{codeeditor}}.tests
+    - git push origin HEAD:refs/heads/next/master HEAD:refs/heads/master
+
+
+prepare_promotion:
+  name: Prepare promotion
   triggers:
-    tags:
+    branches:
       only:
-        - /^(r|R)(c|C)-\d+\.\d+\.\d+(-preview(\.\d+)?)?$/
-  artifacts:
-    logs:
-      paths:
-        - "upm-ci~/test-results/**/*"
-    packages:
-      paths:
-        - "upm-ci~/packages/**/*"
-  dependencies:
-  - .yamato/CI.yml#pack
-  - .yamato/CI.yml#all_package_ci
+        - master
+  agent:
+    type: Unity::VM
+    image: cds-ops/ubuntu-18.04-agent:latest
+    flavor: m1.large
+  commands:
+    - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
+    - python3 /tmp/Nicklas-CI/prepare_promotion.py
