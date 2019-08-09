@@ -6,7 +6,7 @@ platforms:
   - name: win
     type: Unity::VM
     image: sdet/gamecode_win10:latest
-    flavor: m1.large
+    flavor: b1.large
     envsetup: 
   - name: mac
     type: Unity::VM::osx
@@ -16,7 +16,7 @@ platforms:
   - name: linux
     type: Unity::VM
     image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: m1.large
+    flavor: b1.large
     envsetup: npm config set prefix '~/npm-global'
 
 ---
@@ -26,7 +26,7 @@ pack:
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
-    flavor: m1.large
+    flavor: b1.large
   commands:
     - npm install upm-ci-utils -g --registry https://api.bintray.com/npm/unity/unity-npm
     - upm-ci project pack
@@ -90,7 +90,7 @@ prepare_release:
   agent:
     type: Unity::VM
     image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: m1.large
+    flavor: b1.large
   commands:
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
     - python3 /tmp/Nicklas-CI/prepare_release.py
@@ -113,7 +113,7 @@ publish_release:
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
-    flavor: m1.large
+    flavor: b1.large
   commands:
     - npm install upm-ci-utils --registry https://api.bintray.com/npm/unity/unity-npm
     - node node_modules/upm-ci-utils package publish --package-path Packages/com.unity.ide.{{codeeditor}}
@@ -130,7 +130,7 @@ prepare_promotion:
   agent:
     type: Unity::VM
     image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: m1.large
+    flavor: b1.large
   commands:
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
     - python3 /tmp/Nicklas-CI/prepare_promotion.py
