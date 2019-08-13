@@ -19,6 +19,8 @@ TestVSCodePackage/Assets/Plugins
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+Assets/Plugins*
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
