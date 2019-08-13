@@ -48,6 +48,13 @@ namespace VSCodeEditor.Editor_spec
             m_PathsToDelete.Clear();
             m_DirectoriesToDelete.Clear();
 
+            var projectDirectory = Directory.GetParent(Application.dataPath).FullName;
+            var files = Directory.GetFiles(projectDirectory);
+            foreach (var file in files.Where(f => Path.GetExtension(f) == ".csproj"))
+            {
+                File.Delete(file);
+            }
+
             yield return new RecompileScripts(false);
         }
 
