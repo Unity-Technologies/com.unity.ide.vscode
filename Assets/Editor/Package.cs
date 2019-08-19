@@ -9,7 +9,7 @@ namespace VSCodeEditor
         [Test]
         public void Validate()
         {
-            Assert.True(ValidationSuite.ValidatePackage("com.unity.ide.vscode@1.1.0", ValidationType.LocalDevelopment));
+            Assert.True(ValidationSuite.ValidatePackage("com.unity.ide.vscode@1.1.1", ValidationType.LocalDevelopment));
         }
     }
 }

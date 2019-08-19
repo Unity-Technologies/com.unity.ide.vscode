@@ -40,7 +40,8 @@ public class SimpleCSharpScript : MonoBehaviour
         static string s_SolutionFile = $"{ProjectName}.sln";
 
         [SetUp]
-        public void SetUp() {
+        public void SetUp()
+        {
             var projectDirectory = Directory.GetParent(Application.dataPath).FullName;
             m_ProjectGeneration = new ProjectGeneration(projectDirectory);
         }
@@ -82,7 +83,7 @@ public class SimpleCSharpScript : MonoBehaviour
         [UnityTest]
         public IEnumerator EmptySolutionSettingsSucceeds()
         {
-           string originalText = @"Microsoft Visual Studio Solution File, Format Version 10.00
+            string originalText = @"Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Global
 EndGlobal";

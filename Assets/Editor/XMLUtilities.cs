@@ -5,7 +5,8 @@ using System.Xml;
 
 namespace VSCodeEditor
 {
-    public static class XMLUtilities {
+    public static class XMLUtilities
+    {
         public static void AssertReferencesContainAll(XmlDocument projectXml, IEnumerable<string> expectedReferences)
         {
             var references = projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:Reference/@Include", GetModifiedXmlNamespaceManager(projectXml)).ToArray();
