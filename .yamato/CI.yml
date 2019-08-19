@@ -5,7 +5,7 @@ editors:
 platforms:
   - name: win
     type: Unity::VM
-    image: sdet/gamecode_win10:latest
+    image: sdet/gamecode_win10:stable
     flavor: b1.large
     envsetup: 
   - name: mac
@@ -15,8 +15,8 @@ platforms:
     envsetup: 
   - name: linux
     type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.large
+    image: package-ci/ubuntu:stable
+    flavor: b1.medium
     envsetup: npm config set prefix '~/npm-global'
 
 ---
@@ -41,8 +41,8 @@ commit_ci:
   agent:
     name: whatever
     type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.small
+    image: package-ci/ubuntu:stable
+    flavor: b1.medium
   commands:
     - true
   triggers:
@@ -89,8 +89,8 @@ prepare_release:
         - next/master
   agent:
     type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.large
+    image: package-ci/ubuntu:stable
+    flavor: b1.medium
   commands:
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
     - python3 /tmp/Nicklas-CI/prepare_release.py
@@ -129,8 +129,8 @@ prepare_promotion:
         - master
   agent:
     type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.large
+    image: package-ci/ubuntu:stable
+    flavor: b1.medium
   commands:
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
     - python3 /tmp/Nicklas-CI/prepare_promotion.py
