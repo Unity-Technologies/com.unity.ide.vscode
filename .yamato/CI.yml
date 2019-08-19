@@ -35,25 +35,12 @@ pack:
       paths:
         - "**/upm-ci~/packages/**/*"
 
-
 commit_ci:
   name: CI Per Commit
-  agent:
-    name: whatever
-    type: Unity::VM
-    image: package-ci/ubuntu:stable
-    flavor: b1.medium
-  commands:
-    - true
-  triggers:
-    branches:
-      only:
-      - "/.*/"
   dependencies:
   {% for editor in editors %}
   - .yamato/CI.yml#run_test_project_linux_{{ editor.version }}
   {% endfor %}
-
 
 {% for editor in editors %}
 {% for platform in platforms %}
