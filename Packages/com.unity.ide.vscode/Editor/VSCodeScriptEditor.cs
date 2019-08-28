@@ -196,7 +196,7 @@ namespace VSCodeEditor {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "open",
-                    Arguments = $"\"{GetDefaultApp}\" --args {arguments}",
+                    Arguments = $"-n \"{GetDefaultApp}\" --args {arguments}",
                     UseShellExecute = true,
                 }
             };
