@@ -27,8 +27,7 @@ namespace VSCodeEditor
     public interface IAssemblyNameProvider
     {
         string GetAssemblyNameFromScriptPath(string path);
-        IEnumerable<Assembly> GetEditorAssemblies(Func<string, bool> shouldFileBePartOfSolution);
-        IEnumerable<Assembly> GetPlayerAssemblies(Func<string, bool> shouldFileBePartOfSolution);
+        IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution);
         IEnumerable<string> GetAllAssetPaths();
         UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath);
 
@@ -46,14 +45,10 @@ namespace VSCodeEditor
             return CompilationPipeline.GetAssemblyNameFromScriptPath(path);
         }
 
-        public IEnumerable<Assembly> GetEditorAssemblies(Func<string, bool> shouldFileBePartOfSolution)
+        public IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution)
         {
+            // CompilationPipeline.GetAssemblies(AssembliesType.Player).Where(i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(shouldFileBePartOfSolution));
             return CompilationPipeline.GetAssemblies().Where(i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(shouldFileBePartOfSolution));
-        }
-
-        public IEnumerable<Assembly> GetPlayerAssemblies(Func<string, bool> shouldFileBePartOfSolution)
-        {
-            return CompilationPipeline.GetAssemblies(AssembliesType.Player).Where(i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(shouldFileBePartOfSolution));
         }
 
         public IEnumerable<string> GetAllAssetPaths()
@@ -182,7 +177,6 @@ namespace VSCodeEditor
 
         public TestSettings Settings { get; set; }
 
-        IEnumerable<Assembly> m_PlayerAssemblies;
         readonly string m_ProjectName;
         readonly IAssemblyNameProvider m_AssemblyNameProvider;
         const string k_ToolsVersion = "4.0";
@@ -319,15 +313,12 @@ namespace VSCodeEditor
         {
             // Only synchronize islands that have associated source files and ones that we actually want in the project.
             // This also filters out DLLs coming from .asmdef files in packages.
-            var assemblies = m_AssemblyNameProvider.GetEditorAssemblies(ShouldFileBePartOfSolution);
-            m_PlayerAssemblies = m_AssemblyNameProvider.GetPlayerAssemblies(ShouldFileBePartOfSolution);
+            var assemblies = m_AssemblyNameProvider.GetAssemblies(ShouldFileBePartOfSolution);
 
             var allAssetProjectParts = GenerateAllAssetProjectParts();
 
-            var monoIslands = assemblies.Concat(m_PlayerAssemblies).ToList();
-
-            SyncSolution(monoIslands);
-            var allProjectIslands = RelevantIslandsForMode(monoIslands).ToList();
+            SyncSolution(assemblies);
+            var allProjectIslands = RelevantIslandsForMode(assemblies).ToList();
             foreach (Assembly assembly in allProjectIslands)
             {
                 var responseFileData = ParseResponseFileData(assembly);
@@ -564,10 +555,10 @@ namespace VSCodeEditor
         public string ProjectFile(Assembly assembly)
         {
             var fileBuilder = new StringBuilder(Utility.FileNameWithoutExtension(assembly.outputPath));
-            if (!assembly.flags.HasFlag(AssemblyFlags.EditorAssembly) && m_PlayerAssemblies.Contains(assembly))
-            {
-                fileBuilder.Append("-player");
-            }
+//            if (!assembly.flags.HasFlag(AssemblyFlags.EditorAssembly) && m_PlayerAssemblies.Contains(assembly))
+//            {
+//                fileBuilder.Append("-player");
+//            }
             fileBuilder.Append(".csproj");
             return Path.Combine(ProjectDirectory, fileBuilder.ToString());
         }
