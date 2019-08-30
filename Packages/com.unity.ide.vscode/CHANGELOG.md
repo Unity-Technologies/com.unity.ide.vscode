@@ -1,5 +1,10 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.1.2] - 2019-08-30
+
+Fixing OSX open command arguments
+
+
 ## [1.1.1] - 2019-08-19
 
 Support for Player Project. Generates specific csproj files containing files, reference, defines,

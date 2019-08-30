@@ -100,7 +100,7 @@ namespace VSCodeEditor.Editor_spec
                 "File.cs",
             };
             var island = new Assembly("Assembly2", "/User/Test/Assembly2.dll", files, new string[0], new Assembly[0], new string[0], AssemblyFlags.None);
-            mock.Setup(x => x.GetEditorAssemblies(It.IsAny<Func<string, bool>>())).Returns(new[] { island });
+            mock.Setup(x => x.GetAssemblies(It.IsAny<Func<string, bool>>())).Returns(new[] { island });
 
             string projectDirectory = Directory.GetParent(Application.dataPath).FullName;
             var synchronizer = new ProjectGeneration(projectDirectory, mock.Object);
