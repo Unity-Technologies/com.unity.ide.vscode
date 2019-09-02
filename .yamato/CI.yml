@@ -5,7 +5,7 @@ editors:
 platforms:
   - name: win
     type: Unity::VM
-    image: sdet/gamecode_win10:latest
+    image: sdet/gamecode_win10:stable
     flavor: b1.large
     envsetup: 
   - name: mac
@@ -15,8 +15,8 @@ platforms:
     envsetup: 
   - name: linux
     type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.large
+    image: package-ci/ubuntu:stable
+    flavor: b1.medium
     envsetup: npm config set prefix '~/npm-global'
 
 ---
@@ -35,25 +35,12 @@ pack:
       paths:
         - "**/upm-ci~/packages/**/*"
 
-
 commit_ci:
   name: CI Per Commit
-  agent:
-    name: whatever
-    type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.small
-  commands:
-    - true
-  triggers:
-    branches:
-      only:
-      - "/.*/"
   dependencies:
   {% for editor in editors %}
   - .yamato/CI.yml#run_test_project_linux_{{ editor.version }}
   {% endfor %}
-
 
 {% for editor in editors %}
 {% for platform in platforms %}
@@ -89,8 +76,8 @@ prepare_release:
         - next/master
   agent:
     type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.large
+    image: package-ci/ubuntu:stable
+    flavor: b1.medium
   commands:
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
     - python3 /tmp/Nicklas-CI/prepare_release.py
@@ -129,8 +116,8 @@ prepare_promotion:
         - master
   agent:
     type: Unity::VM
-    image: cds-ops/ubuntu-18.04-agent:latest
-    flavor: b1.large
+    image: package-ci/ubuntu:stable
+    flavor: b1.medium
   commands:
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
     - python3 /tmp/Nicklas-CI/prepare_promotion.py
