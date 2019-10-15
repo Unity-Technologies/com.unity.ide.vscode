@@ -23,7 +23,7 @@ namespace VSCodeEditor {
 
         static bool IsOSX => Application.platform == RuntimePlatform.OSXEditor;
 
-        static string GetDefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
+        static string DefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
 
         static string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
         string Arguments
@@ -173,13 +173,14 @@ namespace VSCodeEditor {
                 return OpenOSX(arguments);
             }
 
+            var app = DefaultApp;
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = GetDefaultApp,
+                    FileName = app,
                     Arguments = arguments,
-                    WindowStyle = ProcessWindowStyle.Hidden,
+                    WindowStyle = app.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal,
                     CreateNoWindow = true,
                     UseShellExecute = true,
                 }
@@ -196,7 +197,7 @@ namespace VSCodeEditor {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "open",
-                    Arguments = $"-n \"{GetDefaultApp}\" --args {arguments}",
+                    Arguments = $"-n \"{DefaultApp}\" --args {arguments}",
                     UseShellExecute = true,
                 }
             };
