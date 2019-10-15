@@ -1,4 +1,5 @@
 codeeditor: vscode
+test_suite_name: VisualStudioCode
 editors:
   - version: 2019.2
   - version: trunk
@@ -76,8 +77,8 @@ prepare_release:
         - next/master
   agent:
     type: Unity::VM
-    image: package-ci/ubuntu:stable
-    flavor: b1.medium
+    image: cds-ops/ubuntu-18.04-agent:latest
+    flavor: b1.large
   commands:
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
     - python3 /tmp/Nicklas-CI/prepare_release.py
@@ -103,8 +104,7 @@ publish_release:
     flavor: b1.large
   commands:
     - npm install upm-ci-utils --registry https://api.bintray.com/npm/unity/unity-npm
-    - node node_modules/upm-ci-utils package publish --package-path Packages/com.unity.ide.{{codeeditor}}
-    - node node_modules/upm-ci-utils package publish --package-path Packages/com.unity.ide.{{codeeditor}}.tests
+    - node node_modules/upm-ci-utils project publish
     - git push origin HEAD:refs/heads/next/master HEAD:refs/heads/master -f
 
 
@@ -114,10 +114,13 @@ prepare_promotion:
     branches:
       only:
         - master
+  dependencies:
+    - .yamato/CI.yml#pack
   agent:
     type: Unity::VM
-    image: package-ci/ubuntu:stable
-    flavor: b1.medium
+    image: cds-ops/win10-katana-agent:stable
+    flavor: b1.large
   commands:
-    - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
-    - python3 /tmp/Nicklas-CI/prepare_promotion.py
+    - choco install --no-progress -y python3 -source https://artifactory.bf.unity3d.com/artifactory/api/nuget/unity-choco-local
+    - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git C:\buildslave\Nicklas-CI
+    - py -3 C:\buildslave\Nicklas-CI\prepare_promotion.py C:\buildslave\unity\build upm-ci~/packages/packages.json {{test_suite_name}}
