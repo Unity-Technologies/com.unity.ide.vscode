@@ -2,6 +2,7 @@ codeeditor: vscode
 test_suite_name: VisualStudioCode
 editors:
   - version: 2019.2
+  - version: 2019.3
   - version: trunk
 platforms:
   - name: win
@@ -38,6 +39,10 @@ pack:
 
 commit_ci:
   name: CI Per Commit
+  triggers:
+    branches:
+      only:
+        - "/.*/"
   dependencies:
   {% for editor in editors %}
   - .yamato/CI.yml#run_test_project_linux_{{ editor.version }}
