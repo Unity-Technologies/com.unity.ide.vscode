@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using UnityEngine;
 using UnityEditor.PackageManager.ValidationSuite;
 
 namespace VSCodeEditor

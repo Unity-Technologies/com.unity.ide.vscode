@@ -2,7 +2,7 @@ using Moq;
 using NUnit.Framework;
 using Unity.CodeEditor;
 
-namespace VSCodeEditor.Editor_spec
+namespace VSCodeEditor.Tests
 {
     [TestFixture]
     public class VSCodeScriptEditorTests
