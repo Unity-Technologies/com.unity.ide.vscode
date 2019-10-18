@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEditor;
-using UnityEngine;
 using Unity.CodeEditor;
 
 namespace VSCodeEditor
 {
-    public interface IDiscovery {
+    public interface IDiscovery
+    {
         CodeEditor.Installation[] PathCallback();
     }
 
-    public class VSCodeDiscovery : IDiscovery {
+    public class VSCodeDiscovery : IDiscovery
+    {
         List<CodeEditor.Installation> m_Installations;
 
         public CodeEditor.Installation[] PathCallback()
@@ -121,6 +121,7 @@ namespace VSCodeEditor
                     break;
                 }
             }
+
             return paths[0].Substring(0, baseLength);
         }
 

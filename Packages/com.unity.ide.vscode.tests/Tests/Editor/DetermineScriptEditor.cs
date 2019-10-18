@@ -2,13 +2,12 @@ using NUnit.Framework;
 using Moq;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEditor;
 using Unity.CodeEditor;
 
-namespace VSCodeEditor.Editor_spec
+namespace VSCodeEditor.Tests
 {
     [TestFixture]
-    public class DetermineScriptEditor
+    class DetermineScriptEditor
     {
         [TestCase("/Applications/Visual Studio Code.app")]
         [TestCase("/Applications/Visual Studio Code - Insiders.app")]
@@ -51,7 +50,8 @@ namespace VSCodeEditor.Editor_spec
             var discovery = new Mock<IDiscovery>();
             var generator = new Mock<IGenerator>();
 
-            discovery.Setup(x => x.PathCallback()).Returns(new [] {
+            discovery.Setup(x => x.PathCallback()).Returns(new[]
+            {
                 new CodeEditor.Installation
                 {
                     Path = path,

@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using UnityEngine;
 using UnityEditor.PackageManager.ValidationSuite;
 
 namespace VSCodeEditor
@@ -9,7 +8,10 @@ namespace VSCodeEditor
         [Test]
         public void Validate()
         {
-            Assert.True(ValidationSuite.ValidatePackage("com.unity.ide.vscode@1.1.2", ValidationType.LocalDevelopment));
+            const string package = "com.unity.ide.vscode@1.1.2";
+            var result = ValidationSuite.ValidatePackage(package, ValidationType.LocalDevelopment);
+            UnityEngine.Debug.Log(ValidationSuite.GetValidationSuiteReport(package));
+            Assert.True(result);
         }
     }
 }

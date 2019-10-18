@@ -5,13 +5,11 @@ using UnityEngine.TestTools;
 
 public class RecompileScripts : IEditModeTestYieldInstruction
 {
-    public RecompileScripts() : this(true)
-    {
-    }
+    public RecompileScripts()
+        : this(true) { }
 
-    public RecompileScripts(bool expectScriptCompilation) : this(expectScriptCompilation, true)
-    {
-    }
+    public RecompileScripts(bool expectScriptCompilation)
+        : this(expectScriptCompilation, true) { }
 
     public RecompileScripts(bool expectScriptCompilation, bool expectScriptCompilationSuccess)
     {
