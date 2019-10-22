@@ -6,7 +6,8 @@ using UnityEditor;
 using UnityEngine;
 using Unity.CodeEditor;
 
-namespace VSCodeEditor {
+namespace VSCodeEditor
+{
     [InitializeOnLoad]
     public class VSCodeScriptEditor : IExternalCodeEditor
     {
@@ -23,9 +24,10 @@ namespace VSCodeEditor {
 
         static bool IsOSX => Application.platform == RuntimePlatform.OSXEditor;
 
-        static string GetDefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
+        static string DefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
 
         static string DefaultArgument { get; } = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
+
         string Arguments
         {
             get => m_Arguments ?? (m_Arguments = EditorPrefs.GetString(vscode_argument, DefaultArgument));
@@ -40,7 +42,7 @@ namespace VSCodeEditor {
         {
             get
             {
-                var customExtensions = new[] {"json", "asmdef", "log"};
+                var customExtensions = new[] { "json", "asmdef", "log" };
                 return EditorSettings.projectGenerationBuiltinExtensions
                     .Concat(EditorSettings.projectGenerationUserExtensions)
                     .Concat(customExtensions)
@@ -53,7 +55,7 @@ namespace VSCodeEditor {
             get
             {
                 return HandledExtensionsString
-                    .Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries)
+                    .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => s.TrimStart('.', '*'))
                     .ToArray();
             }
@@ -75,6 +77,7 @@ namespace VSCodeEditor {
                 installation = default;
                 return false;
             }
+
             if (!installations.Any())
             {
                 installation = new CodeEditor.Installation
@@ -109,6 +112,7 @@ namespace VSCodeEditor {
             {
                 Arguments = DefaultArgument;
             }
+
             var prevGenerate = EditorPrefs.GetBool(vscode_generate_all, false);
 
             var generateAll = EditorGUILayout.Toggle("Generate all .csproj files.", prevGenerate);
@@ -116,6 +120,7 @@ namespace VSCodeEditor {
             {
                 EditorPrefs.SetBool(vscode_generate_all, generateAll);
             }
+
             m_ProjectGeneration.GenerateAll(generateAll);
 
             HandledExtensionsString = EditorGUILayout.TextField(new GUIContent("Extensions handled: "), HandledExtensionsString);
@@ -123,7 +128,7 @@ namespace VSCodeEditor {
 
         public void CreateIfDoesntExist()
         {
-            if (!m_ProjectGeneration.HasSolutionBeenGenerated())
+            if (!m_ProjectGeneration.SolutionExists())
             {
                 m_ProjectGeneration.Sync();
             }
@@ -173,13 +178,14 @@ namespace VSCodeEditor {
                 return OpenOSX(arguments);
             }
 
+            var app = DefaultApp;
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = GetDefaultApp,
+                    FileName = app,
                     Arguments = arguments,
-                    WindowStyle = ProcessWindowStyle.Hidden,
+                    WindowStyle = app.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal,
                     CreateNoWindow = true,
                     UseShellExecute = true,
                 }
@@ -196,7 +202,7 @@ namespace VSCodeEditor {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "open",
-                    Arguments = $"-n \"{GetDefaultApp}\" --args {arguments}",
+                    Arguments = $"-n \"{DefaultApp}\" --args {arguments}",
                     UseShellExecute = true,
                 }
             };
@@ -223,7 +229,7 @@ namespace VSCodeEditor {
 
         static VSCodeScriptEditor()
         {
-            var editor = new VSCodeScriptEditor(new VSCodeDiscovery(), new ProjectGeneration());
+            var editor = new VSCodeScriptEditor(new VSCodeDiscovery(), new ProjectGeneration(Directory.GetParent(Application.dataPath).FullName));
             CodeEditor.Register(editor);
 
             if (IsVSCodeInstallation(CodeEditor.CurrentEditorInstallation))
@@ -246,8 +252,6 @@ namespace VSCodeEditor {
             return k_SupportedFileNames.Contains(filename);
         }
 
-        public void Initialize(string editorInstallationPath)
-        {
-        }
+        public void Initialize(string editorInstallationPath) { }
     }
 }
