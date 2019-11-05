@@ -178,9 +178,23 @@ namespace VSCodeEditor
             SetupProjectSupportedExtensions();
 
             // Don't sync if we haven't synced before
-            if (SolutionExists() && HasFilesBeenModified(affectedFiles, reimportedFiles))
+            var affected = affectedFiles.ToList();
+            var reimported = reimportedFiles.ToList();
+            if (SolutionExists() && HasFilesBeenModified(affected, reimported))
             {
-                Sync();
+                var assemblies = m_AssemblyNameProvider.GetAssemblies(ShouldFileBePartOfSolution);
+                var allProjectIslands = RelevantIslandsForMode(assemblies).ToList();
+                var allAssetProjectParts = GenerateAllAssetProjectParts();
+
+                var affectedNames = affected.Select(m_AssemblyNameProvider.GetAssemblyNameFromScriptPath);
+                var reimportedNames = reimported.Select(m_AssemblyNameProvider.GetAssemblyNameFromScriptPath);
+                var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
+                var necessary = allProjectIslands.Where(assembly => affectedAndReimported.Contains(assembly.name));
+
+                foreach (var island in necessary)
+                {
+                    SyncProject(island, allAssetProjectParts, ParseResponseFileData(island), allProjectIslands);
+                }
 
                 Profiler.EndSample();
                 return true;
@@ -331,7 +345,7 @@ namespace VSCodeEditor
                 if (IsSupportedExtension(extension) && ScriptingLanguage.None == ScriptingLanguageFor(extension))
                 {
                     // Find assembly the asset belongs to by adding script extension and using compilation pipeline.
-                    var assemblyName = m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset + ".cs");
+                    var assemblyName = m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset);
 
                     if (string.IsNullOrEmpty(assemblyName))
                     {
@@ -642,8 +656,7 @@ namespace VSCodeEditor
 
         static IEnumerable<Assembly> RelevantIslandsForMode(IEnumerable<Assembly> islands)
         {
-            IEnumerable<Assembly> relevantIslands = islands.Where(i => ScriptingLanguage.CSharp == ScriptingLanguageFor(i));
-            return relevantIslands;
+            return islands.Where(i => ScriptingLanguage.CSharp == ScriptingLanguageFor(i));
         }
 
         /// <summary>
