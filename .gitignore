@@ -20,6 +20,8 @@ TestVSCodePackage/Assets/Plugins
 *.userprefs
 
 Assets/Plugins*
+UserSettings/
+ProjectSettings/
 
 # Build results
 [Dd]ebug/

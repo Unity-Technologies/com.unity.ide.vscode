@@ -123,10 +123,6 @@ publish_release:
 
 prepare_promotion:
   name: Prepare promotion
-  triggers:
-    branches:
-      only:
-        - master
   dependencies:
     - .yamato/CI.yml#pack
   agent:
@@ -138,3 +134,22 @@ prepare_promotion:
     - choco install --no-progress -y python3 -source https://artifactory.bf.unity3d.com/artifactory/api/nuget/unity-choco-local
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git C:\buildslave\Nicklas-CI
     - py -3 C:\buildslave\Nicklas-CI\prepare_promotion.py C:\buildslave\unity\build upm-ci~/packages/packages.json {{test_suite_name}}
+
+
+create_pull_request:
+  name: Create Ono Pull Request
+  triggers:
+    branches:
+      only:
+        - master
+  dependencies:
+    - .yamato/CI.yml#prepare_promotion
+    - .yamato/CI.yml#pack
+  agent:
+    type: Unity::VM
+    image: cds-ops/ubuntu-18.04-agent:latest
+    flavor: b1.large
+  commands:
+    - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
+    - python3 /tmp/Nicklas-CI/create_pullrequest.py nicklas upm-ci~/packages/packages.json
+    - python3 /tmp/Nicklas-CI/start_katana.py "Nicklas Pingel <nicklas@unity3d.com>" upm-ci~/packages/packages.json
