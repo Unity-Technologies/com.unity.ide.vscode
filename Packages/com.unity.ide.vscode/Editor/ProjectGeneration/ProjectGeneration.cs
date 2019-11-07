@@ -184,8 +184,8 @@ namespace VSCodeEditor
                 var allProjectAssemblies = RelevantAssembliesForMode(assemblies).ToList();
                 var allAssetProjectParts = GenerateAllAssetProjectParts();
 
-                var affectedNames = affectedFiles.Select(m_AssemblyNameProvider.GetAssemblyNameFromScriptPath);
-                var reimportedNames = reimportedFiles.Select(m_AssemblyNameProvider.GetAssemblyNameFromScriptPath);
+                var affectedNames = affectedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset).Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
+                var reimportedNames = reimportedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset).Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
                 var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
                 var necessary = allProjectAssemblies.Where(assembly => affectedAndReimported.Contains(assembly.name));
 

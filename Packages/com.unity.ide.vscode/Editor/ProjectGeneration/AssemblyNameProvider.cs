@@ -19,7 +19,7 @@ namespace VSCodeEditor
     {
         public string GetAssemblyNameFromScriptPath(string path)
         {
-            return CompilationPipeline.GetAssemblyNameFromScriptPath(path + ".cs");
+            return CompilationPipeline.GetAssemblyNameFromScriptPath(path);
         }
 
         public IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution)
