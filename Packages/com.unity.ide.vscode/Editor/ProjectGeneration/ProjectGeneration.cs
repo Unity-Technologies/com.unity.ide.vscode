@@ -16,7 +16,7 @@ namespace VSCodeEditor
 {
     public interface IGenerator
     {
-        bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles);
+        bool SyncIfNeeded(List<string> affectedFiles, string[] reimportedFiles);
         void Sync();
         string SolutionFile();
         string ProjectDirectory { get; }
@@ -172,28 +172,26 @@ namespace VSCodeEditor
         /// <param name="reimportedFiles">
         /// A set of files that got reimported
         /// </param>
-        public bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
+        public bool SyncIfNeeded(List<string> affectedFiles, string[] reimportedFiles)
         {
             Profiler.BeginSample("SolutionSynchronizerSync");
             SetupProjectSupportedExtensions();
 
             // Don't sync if we haven't synced before
-            var affected = affectedFiles.ToList();
-            var reimported = reimportedFiles.ToList();
-            if (SolutionExists() && HasFilesBeenModified(affected, reimported))
+            if (SolutionExists() && HasFilesBeenModified(affectedFiles, reimportedFiles))
             {
                 var assemblies = m_AssemblyNameProvider.GetAssemblies(ShouldFileBePartOfSolution);
-                var allProjectIslands = RelevantIslandsForMode(assemblies).ToList();
+                var allProjectAssemblies = RelevantAssembliesForMode(assemblies).ToList();
                 var allAssetProjectParts = GenerateAllAssetProjectParts();
 
-                var affectedNames = affected.Select(m_AssemblyNameProvider.GetAssemblyNameFromScriptPath);
-                var reimportedNames = reimported.Select(m_AssemblyNameProvider.GetAssemblyNameFromScriptPath);
+                var affectedNames = affectedFiles.Select(m_AssemblyNameProvider.GetAssemblyNameFromScriptPath);
+                var reimportedNames = reimportedFiles.Select(m_AssemblyNameProvider.GetAssemblyNameFromScriptPath);
                 var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
-                var necessary = allProjectIslands.Where(assembly => affectedAndReimported.Contains(assembly.name));
+                var necessary = allProjectAssemblies.Where(assembly => affectedAndReimported.Contains(assembly.name));
 
-                foreach (var island in necessary)
+                foreach (var assembly in necessary)
                 {
-                    SyncProject(island, allAssetProjectParts, ParseResponseFileData(island), allProjectIslands);
+                    SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly), allProjectAssemblies);
                 }
 
                 Profiler.EndSample();
@@ -204,7 +202,7 @@ namespace VSCodeEditor
             return false;
         }
 
-        bool HasFilesBeenModified(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
+        bool HasFilesBeenModified(List<string> affectedFiles, string[] reimportedFiles)
         {
             return affectedFiles.Any(ShouldFileBePartOfSolution) || reimportedFiles.Any(ShouldSyncOnReimportedAsset);
         }
@@ -260,9 +258,9 @@ namespace VSCodeEditor
             return false;
         }
 
-        static ScriptingLanguage ScriptingLanguageFor(Assembly island)
+        static ScriptingLanguage ScriptingLanguageFor(Assembly assembly)
         {
-            return ScriptingLanguageFor(GetExtensionOfSourceFiles(island.sourceFiles));
+            return ScriptingLanguageFor(GetExtensionOfSourceFiles(assembly.sourceFiles));
         }
 
         static string GetExtensionOfSourceFiles(string[] files)
@@ -286,18 +284,18 @@ namespace VSCodeEditor
 
         public void GenerateAndWriteSolutionAndProjects()
         {
-            // Only synchronize islands that have associated source files and ones that we actually want in the project.
+            // Only synchronize assemblies that have associated source files and ones that we actually want in the project.
             // This also filters out DLLs coming from .asmdef files in packages.
             var assemblies = m_AssemblyNameProvider.GetAssemblies(ShouldFileBePartOfSolution);
 
             var allAssetProjectParts = GenerateAllAssetProjectParts();
 
             SyncSolution(assemblies);
-            var allProjectIslands = RelevantIslandsForMode(assemblies).ToList();
-            foreach (Assembly assembly in allProjectIslands)
+            var allProjectAssemblies = RelevantAssembliesForMode(assemblies).ToList();
+            foreach (Assembly assembly in allProjectAssemblies)
             {
                 var responseFileData = ParseResponseFileData(assembly);
-                SyncProject(assembly, allAssetProjectParts, responseFileData, allProjectIslands);
+                SyncProject(assembly, allAssetProjectParts, responseFileData, allProjectAssemblies);
             }
 
             WriteVSCodeSettingsFiles();
@@ -390,12 +388,12 @@ namespace VSCodeEditor
         }
 
         void SyncProject(
-            Assembly island,
+            Assembly assembly,
             Dictionary<string, string> allAssetsProjectParts,
             IEnumerable<ResponseFileData> responseFilesData,
-            List<Assembly> allProjectIslands)
+            List<Assembly> allProjectAssemblies)
         {
-            SyncProjectFileIfNotChanged(ProjectFile(island), ProjectText(island, allAssetsProjectParts, responseFilesData, allProjectIslands));
+            SyncProjectFileIfNotChanged(ProjectFile(assembly), ProjectText(assembly, allAssetsProjectParts, responseFilesData, allProjectAssemblies));
         }
 
         void SyncProjectFileIfNotChanged(string path, string newContents)
@@ -427,7 +425,7 @@ namespace VSCodeEditor
             Assembly assembly,
             Dictionary<string, string> allAssetsProjectParts,
             IEnumerable<ResponseFileData> responseFilesData,
-            List<Assembly> allProjectIslands)
+            List<Assembly> allProjectAssemblies)
         {
             var projectBuilder = new StringBuilder(ProjectHeader(assembly, responseFilesData));
             var references = new List<string>();
@@ -454,9 +452,9 @@ namespace VSCodeEditor
             if (allAssetsProjectParts.TryGetValue(assembly.name, out var additionalAssetsForProject))
                 projectBuilder.Append(additionalAssetsForProject);
 
-            var islandRefs = references.Union(assembly.allReferences);
+            var AssemblyRefs = references.Union(assembly.allReferences);
 
-            foreach (string reference in islandRefs)
+            foreach (string reference in AssemblyRefs)
             {
                 var match = k_ScriptReferenceExpression.Match(reference);
                 if (match.Success)
@@ -466,7 +464,7 @@ namespace VSCodeEditor
                     // that we are not generating a project for. This will be the case for assemblies
                     // coming from .assembly.json files in non-internalized packages.
                     var dllName = match.Groups["dllname"].Value;
-                    if (allProjectIslands.Any(i => Path.GetFileName(i.outputPath) == dllName))
+                    if (allProjectAssemblies.Any(i => Path.GetFileName(i.outputPath) == dllName))
                     {
                         projectReferences.Add(match);
                         continue;
@@ -638,34 +636,34 @@ namespace VSCodeEditor
             return string.Join("\r\n", text);
         }
 
-        void SyncSolution(IEnumerable<Assembly> islands)
+        void SyncSolution(IEnumerable<Assembly> assemblies)
         {
-            SyncSolutionFileIfNotChanged(SolutionFile(), SolutionText(islands));
+            SyncSolutionFileIfNotChanged(SolutionFile(), SolutionText(assemblies));
         }
 
-        string SolutionText(IEnumerable<Assembly> islands)
+        string SolutionText(IEnumerable<Assembly> assemblies)
         {
             var fileversion = "11.00";
             var vsversion = "2010";
 
-            var relevantIslands = RelevantIslandsForMode(islands);
-            string projectEntries = GetProjectEntries(relevantIslands);
-            string projectConfigurations = string.Join(k_WindowsNewline, relevantIslands.Select(i => GetProjectActiveConfigurations(ProjectGuid(i.name))).ToArray());
+            var relevantAssemblies = RelevantAssembliesForMode(assemblies);
+            string projectEntries = GetProjectEntries(relevantAssemblies);
+            string projectConfigurations = string.Join(k_WindowsNewline, relevantAssemblies.Select(i => GetProjectActiveConfigurations(ProjectGuid(i.name))).ToArray());
             return string.Format(GetSolutionText(), fileversion, vsversion, projectEntries, projectConfigurations);
         }
 
-        static IEnumerable<Assembly> RelevantIslandsForMode(IEnumerable<Assembly> islands)
+        static IEnumerable<Assembly> RelevantAssembliesForMode(IEnumerable<Assembly> assemblies)
         {
-            return islands.Where(i => ScriptingLanguage.CSharp == ScriptingLanguageFor(i));
+            return assemblies.Where(i => ScriptingLanguage.CSharp == ScriptingLanguageFor(i));
         }
 
         /// <summary>
         /// Get a Project("{guid}") = "MyProject", "MyProject.csproj", "{projectguid}"
         /// entry for each relevant language
         /// </summary>
-        string GetProjectEntries(IEnumerable<Assembly> islands)
+        string GetProjectEntries(IEnumerable<Assembly> assemblies)
         {
-            var projectEntries = islands.Select(i => string.Format(
+            var projectEntries = assemblies.Select(i => string.Format(
                 m_SolutionProjectEntryTemplate,
                 SolutionGuid(i),
                 i.name,
@@ -723,9 +721,9 @@ namespace VSCodeEditor
             return m_GUIDProvider.ProjectGuid(m_ProjectName, assembly);
         }
 
-        string SolutionGuid(Assembly island)
+        string SolutionGuid(Assembly assembly)
         {
-            return m_GUIDProvider.SolutionGuid(m_ProjectName, GetExtensionOfSourceFiles(island.sourceFiles));
+            return m_GUIDProvider.SolutionGuid(m_ProjectName, GetExtensionOfSourceFiles(assembly.sourceFiles));
         }
 
         static string ProjectFooter()

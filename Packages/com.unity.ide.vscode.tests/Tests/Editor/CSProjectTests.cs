@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -345,7 +346,7 @@ namespace VSCodeEditor.Tests
                 var synchronizer = m_Builder.Build();
                 synchronizer.Sync();
                 const string newFile = "Newfile.cs";
-                var newFileArray = new[] { newFile };
+                var newFileArray = new List<string> { newFile };
                 m_Builder.WithAssemblyData(files: m_Builder.Assembly.sourceFiles.Concat(newFileArray).ToArray());
 
                 Assert.True(synchronizer.SyncIfNeeded(newFileArray, new string[0]), "Should sync when file in assembly changes");
@@ -364,7 +365,7 @@ namespace VSCodeEditor.Tests
                 var newFileArray = new[] { newFile };
                 m_Builder.WithAssemblyData(files: newFileArray);
 
-                Assert.True(synchronizer.SyncIfNeeded(newFileArray, new string[0]), "Should sync when file in assembly changes");
+                Assert.True(synchronizer.SyncIfNeeded(newFileArray.ToList(), new string[0]), "Should sync when file in assembly changes");
 
                 var csprojContentAfter = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 StringAssert.Contains(newFile, csprojContentAfter);
@@ -393,7 +394,7 @@ namespace VSCodeEditor.Tests
                 var filesAfter = filesBefore.Skip(1).ToArray();
                 m_Builder.WithAssemblyData(files: filesAfter);
 
-                Assert.True(synchronizer.SyncIfNeeded(filesAfter, new string[0]), "Should sync when file in assembly changes");
+                Assert.True(synchronizer.SyncIfNeeded(filesAfter.ToList(), new string[0]), "Should sync when file in assembly changes");
 
                 var csprojContentAfter = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 StringAssert.Contains(filesAfter[0], csprojContentAfter);
