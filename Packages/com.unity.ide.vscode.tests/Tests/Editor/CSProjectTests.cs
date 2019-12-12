@@ -496,13 +496,13 @@ namespace VSCodeEditor.Tests
             {
                 const string responseFile = "csc.rsp";
                 var synchronizer = m_Builder
-                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "Folder/Path With Space/Goodbye.dll" })
+                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "C://Folder/Path With Space/Goodbye.dll" })
                     .Build();
 
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Goodbye\">\\W*<HintPath>Folder/Path With Space/Goodbye.dll\\W*</HintPath>\\W*</Reference>"));
+                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Goodbye\">\\W*<HintPath>C://Folder/Path With Space/Goodbye.dll\\W*</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -516,7 +516,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex($"<Reference Include=\"assembly\">\\W*<HintPath>{assembly.outputPath}\\W*</HintPath>\\W*</Reference>"));
+                Assert.IsTrue(csprojFileContents.MatchesRegex($@"<ProjectReference Include=""{assembly.name}\.csproj\"">"));
             }
 
             [Test]
@@ -524,15 +524,15 @@ namespace VSCodeEditor.Tests
             {
                 const string responseFile = "csc.rsp";
                 var synchronizer = m_Builder
-                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "MyPlugin.dll", "Hello.dll" })
+                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "//MyPlugin.dll", "//Hello.dll" })
                     .Build();
 
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
 
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Hello\">\\W*<HintPath>Hello.dll</HintPath>\\W*</Reference>"));
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"MyPlugin\">\\W*<HintPath>MyPlugin.dll</HintPath>\\W*</Reference>"));
+                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Hello\">\\W*<HintPath>//Hello.dll</HintPath>\\W*</Reference>"));
+                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"MyPlugin\">\\W*<HintPath>//MyPlugin.dll</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -549,8 +549,8 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex($"<Reference Include=\"{assemblyReferences[0].name}\">\\W*<HintPath>{assemblyReferences[0].outputPath}</HintPath>\\W*</Reference>"));
-                Assert.IsTrue(csprojFileContents.MatchesRegex($"<Reference Include=\"{assemblyReferences[1].name}\">\\W*<HintPath>{assemblyReferences[1].outputPath}</HintPath>\\W*</Reference>"));
+                Assert.IsTrue(csprojFileContents.MatchesRegex($"<ProjectReference Include=\"{assemblyReferences[0].name}\\.csproj\">\\s+.+\\s+<Name>{assemblyReferences[0].name}</Name>\\W*</ProjectReference>"));
+                Assert.IsTrue(csprojFileContents.MatchesRegex($"<ProjectReference Include=\"{assemblyReferences[1].name}\\.csproj\">\\s+.+\\s+<Name>{assemblyReferences[1].name}</Name>\\W*</ProjectReference>"));
             }
 
             [Test]
