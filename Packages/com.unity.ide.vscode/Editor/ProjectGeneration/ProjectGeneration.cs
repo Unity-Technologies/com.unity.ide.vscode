@@ -16,6 +16,18 @@ namespace VSCodeEditor
 {
     public interface IGenerator
     {
+        /// <summary>
+        /// Syncs the scripting solution if any affected files are relevant.
+        /// </summary>
+        /// <returns>
+        /// Whether the solution was synced.
+        /// </returns>
+        /// <param name='affectedFiles'>
+        /// A set of files whose status has changed
+        /// </param>
+        /// <param name="reimportedFiles">
+        /// A set of files that got reimported
+        /// </param>
         bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles);
         void Sync();
         string SolutionFile();
@@ -160,18 +172,6 @@ namespace VSCodeEditor
             m_GUIDProvider = guidGenerator;
         }
 
-        /// <summary>
-        /// Syncs the scripting solution if any affected files are relevant.
-        /// </summary>
-        /// <returns>
-        /// Whether the solution was synced.
-        /// </returns>
-        /// <param name='affectedFiles'>
-        /// A set of files whose status has changed
-        /// </param>
-        /// <param name="reimportedFiles">
-        /// A set of files that got reimported
-        /// </param>
         public bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
         {
             Profiler.BeginSample("SolutionSynchronizerSync");
@@ -274,7 +274,7 @@ namespace VSCodeEditor
         {
             // Only synchronize islands that have associated source files and ones that we actually want in the project.
             // This also filters out DLLs coming from .asmdef files in packages.
-            var assemblies = m_AssemblyNameProvider.GetAssemblies(ShouldFileBePartOfSolution);
+            var assemblies = m_AssemblyNameProvider.GetAssemblies(); // TODO: This is wrong missing funk
 
             var allAssetProjectParts = GenerateAllAssetProjectParts();
 

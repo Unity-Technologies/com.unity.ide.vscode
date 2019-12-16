@@ -80,7 +80,7 @@ namespace VSCodeEditor.Tests
         public SynchronizerBuilder WithAssemblies(Assembly[] assemblies)
         {
             m_Assemblies = assemblies;
-            m_AssemblyProvider.Setup(x => x.GetAssemblies(It.IsAny<Func<string, bool>>())).Returns(m_Assemblies);
+            //m_AssemblyProvider.Setup(x => x.GetAssemblies(It.IsAny<Func<string, bool>>())).Returns(m_Assemblies);
             return this;
         }
 
@@ -93,8 +93,10 @@ namespace VSCodeEditor.Tests
                 defines ?? new string[0],
                 assemblyReferences ?? new Assembly[0],
                 compiledAssemblyReferences ?? new string[0],
-                AssemblyFlags.None);
-            assembly.compilerOptions.AllowUnsafeCode = unsafeSettings;
+                AssemblyFlags.None)
+            {
+                compilerOptions = { AllowUnsafeCode = unsafeSettings }
+            };
             return WithAssembly(
                 assembly
             );

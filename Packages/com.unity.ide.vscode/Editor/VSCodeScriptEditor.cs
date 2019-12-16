@@ -229,7 +229,7 @@ namespace VSCodeEditor
 
         static VSCodeScriptEditor()
         {
-            var editor = new VSCodeScriptEditor(new VSCodeDiscovery(), new ProjectGeneration(Directory.GetParent(Application.dataPath).FullName));
+            var editor = new VSCodeScriptEditor(new VSCodeDiscovery(), new NewCSharpAmazementsBallz(Directory.GetParent(Application.dataPath).FullName));
             CodeEditor.Register(editor);
 
             if (IsVSCodeInstallation(CodeEditor.CurrentEditorInstallation))
