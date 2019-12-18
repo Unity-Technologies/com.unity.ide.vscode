@@ -9,12 +9,12 @@ platforms:
     type: Unity::VM
     image: package-ci/win10:stable
     flavor: b1.large
-    envsetup:
+    envsetup: echo
   - name: mac
     type: Unity::VM::osx
     image: buildfarm/mac:stable
     flavor: m1.mac
-    envsetup:
+    envsetup: echo
   - name: linux
     type: Unity::VM
     image: package-ci/ubuntu:stable
