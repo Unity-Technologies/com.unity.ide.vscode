@@ -496,13 +496,13 @@ namespace VSCodeEditor.Tests
             {
                 const string responseFile = "csc.rsp";
                 var synchronizer = m_Builder
-                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "C://Folder/Path With Space/Goodbye.dll" })
+                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "/Folder/Path With Space/Goodbye.dll" })
                     .Build();
 
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Goodbye\">\\W*<HintPath>C://Folder/Path With Space/Goodbye.dll\\W*</HintPath>\\W*</Reference>"));
+                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Goodbye\">\\W*<HintPath>/Folder/Path With Space/Goodbye.dll\\W*</HintPath>\\W*</Reference>"));
             }
 
             [Test]
