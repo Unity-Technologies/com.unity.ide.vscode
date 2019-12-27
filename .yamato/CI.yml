@@ -9,12 +9,12 @@ platforms:
     type: Unity::VM
     image: package-ci/win10:stable
     flavor: b1.large
-    envsetup:
+    envsetup: echo
   - name: mac
     type: Unity::VM::osx
     image: buildfarm/mac:stable
     flavor: m1.mac
-    envsetup:
+    envsetup: echo
   - name: linux
     type: Unity::VM
     image: package-ci/ubuntu:stable
@@ -44,6 +44,8 @@ commit_ci:
     branches:
       only:
         - "/.*/"
+      except:
+        - "*master*"
   dependencies:
   {% for editor in editors %}
   - .yamato/CI.yml#run_test_project_linux_{{ editor.version }}
@@ -123,10 +125,6 @@ publish_release:
 
 prepare_promotion:
   name: Prepare promotion
-  triggers:
-    branches:
-      only:
-        - master
   dependencies:
     - .yamato/CI.yml#pack
   agent:
@@ -134,6 +132,26 @@ prepare_promotion:
     image: cds-ops/win10-katana-agent:stable
     flavor: b1.large
   commands:
+    - if NOT "%GIT_BRANCH%" == "master" echo %GIT_BRANCH% && exit 1
     - choco install --no-progress -y python3 -source https://artifactory.bf.unity3d.com/artifactory/api/nuget/unity-choco-local
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git C:\buildslave\Nicklas-CI
     - py -3 C:\buildslave\Nicklas-CI\prepare_promotion.py C:\buildslave\unity\build upm-ci~/packages/packages.json {{test_suite_name}}
+
+
+create_pull_request:
+  name: Create Ono Pull Request
+  triggers:
+    branches:
+      only:
+        - master
+  dependencies:
+    - .yamato/CI.yml#prepare_promotion
+    - .yamato/CI.yml#pack
+  agent:
+    type: Unity::VM
+    image: cds-ops/ubuntu-18.04-agent:latest
+    flavor: b1.large
+  commands:
+    - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
+    - python3 /tmp/Nicklas-CI/create_pullrequest.py nicklas upm-ci~/packages/packages.json
+    - python3 /tmp/Nicklas-CI/start_katana.py "Nicklas Pingel <nicklas@unity3d.com>" upm-ci~/packages/packages.json

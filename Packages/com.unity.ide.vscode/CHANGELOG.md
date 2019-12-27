@@ -1,5 +1,10 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.1.4] - 2020-01-02
+
+Delta project generation, only recompute the csproj files whose script modified.
+
+
 ## [1.1.3] - 2019-10-22
 
 Exe version of vscode will use Normal ProcessWindowStyle while cmd will use Hidden
