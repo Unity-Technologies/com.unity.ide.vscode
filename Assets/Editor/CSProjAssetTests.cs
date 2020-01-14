@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading;
 using NUnit.Framework;
 using UnityEditor;
@@ -213,7 +212,7 @@ public class SimpleCSharpScript : MonoBehaviour
         static void AssertProjectContainsDefine(string csProjPath, string expectedDefine)
         {
             var content = File.ReadAllText(csProjPath);
-            Assert.IsTrue(Regex.IsMatch(content, $"<DefineConstants>.*;{expectedDefine}.*</DefineConstants>"));
+            Assert.That(content, Does.Match($"<DefineConstants>.*;{expectedDefine}.*</DefineConstants>"));
         }
 
         delegate bool Condition();

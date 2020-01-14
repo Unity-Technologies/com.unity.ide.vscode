@@ -28,7 +28,7 @@ namespace com.unity.ide.vscode.tests
 
                 synchronizer.Sync();
 
-                Assert.True(synchronizer.SolutionExists(), "Should create solution file.");
+                Assert.That(synchronizer.SolutionExists(), "Should create solution file.");
             }
 
             [Test]
@@ -92,7 +92,7 @@ namespace com.unity.ide.vscode.tests
 
                 synchronizer.Sync();
 
-                Assert.IsTrue(synchronizer.SyncIfNeeded(new List<string>(), new[] { $"reimport.{reimportedFile}" }));
+                Assert.That(synchronizer.SyncIfNeeded(new List<string>(), new[] { $"reimport.{reimportedFile}" }));
             }
 
             [Test]
@@ -161,7 +161,7 @@ namespace com.unity.ide.vscode.tests
 
                 synchronizer.Sync();
 
-                Assert.IsTrue(synchronizer.SyncIfNeeded(new List<string> { $"reimport.{fileExtension}" }, new string[0]));
+                Assert.That(synchronizer.SyncIfNeeded(new List<string> { $"reimport.{fileExtension}" }, new string[0]));
             }
 
             static string[] s_ExtensionsRequireReSync =
@@ -180,7 +180,7 @@ namespace com.unity.ide.vscode.tests
                 synchronizer.Sync();
 
                 string[] syncedSolutionText = m_Builder.ReadFile(synchronizer.SolutionFile()).Split(new[] { "\r\n" }, StringSplitOptions.None);
-                Assert.IsTrue(syncedSolutionText.Length >= 4);
+                Assert.That(syncedSolutionText.Length, Is.GreaterThanOrEqualTo(4));
                 Assert.AreEqual("", syncedSolutionText[0]);
                 Assert.AreEqual("Microsoft Visual Studio Solution File, Format Version 11.00", syncedSolutionText[1]);
                 Assert.AreEqual("# Visual Studio 2010", syncedSolutionText[2]);

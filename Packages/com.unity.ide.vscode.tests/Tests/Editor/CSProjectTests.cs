@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Xml;
 using NUnit.Framework;
 using UnityEditor.Compilation;
@@ -140,8 +139,8 @@ namespace com.unity.ide.vscode.tests
                 var assemblyACSproject = Path.Combine(SynchronizerBuilder.projectDirectory, $"{assemblyA.name}.csproj");
                 var assemblyBCSproject = Path.Combine(SynchronizerBuilder.projectDirectory, $"{assemblyB.name}.csproj");
 
-                Assert.True(m_Builder.FileExists(assemblyACSproject));
-                Assert.True(m_Builder.FileExists(assemblyBCSproject));
+                Assert.That(m_Builder.FileExists(assemblyACSproject));
+                Assert.That(m_Builder.FileExists(assemblyBCSproject));
 
                 XmlDocument scriptProject = XMLUtilities.FromText(m_Builder.ReadFile(assemblyACSproject));
                 XmlDocument scriptPluginProject = XMLUtilities.FromText(m_Builder.ReadFile(assemblyBCSproject));
@@ -175,7 +174,7 @@ namespace com.unity.ide.vscode.tests
 
                 synchronizer.Sync();
 
-                Assert.IsTrue(m_Builder.FileExists(m_Builder.ProjectFilePath(m_Builder.Assembly)));
+                Assert.That(m_Builder.FileExists(m_Builder.ProjectFilePath(m_Builder.Assembly)));
             }
 
             [Test]
@@ -187,8 +186,8 @@ namespace com.unity.ide.vscode.tests
 
                 synchronizer.Sync();
 
-                Assert.IsTrue(m_Builder.FileExists(m_Builder.ProjectFilePath(assemblyA)));
-                Assert.IsTrue(m_Builder.FileExists(m_Builder.ProjectFilePath(assemblyB)));
+                Assert.That(m_Builder.FileExists(m_Builder.ProjectFilePath(assemblyA)));
+                Assert.That(m_Builder.FileExists(m_Builder.ProjectFilePath(assemblyB)));
             }
 
             [Test]
@@ -376,7 +375,7 @@ namespace com.unity.ide.vscode.tests
                 var newFileArray = new List<string> { newFile };
                 m_Builder.WithAssemblyData(files: m_Builder.Assembly.sourceFiles.Concat(newFileArray).ToArray());
 
-                Assert.True(synchronizer.SyncIfNeeded(newFileArray, new string[0]), "Should sync when file in assembly changes");
+                Assert.That(synchronizer.SyncIfNeeded(newFileArray, new string[0]), "Should sync when file in assembly changes");
 
                 var csprojContentAfter = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 StringAssert.Contains(newFile, csprojContentAfter);
@@ -392,7 +391,7 @@ namespace com.unity.ide.vscode.tests
                 var newFiles = new List<string> { newFile };
                 m_Builder.WithAssemblyData(files: newFiles.ToArray());
 
-                Assert.True(synchronizer.SyncIfNeeded(newFiles, new string[0]), "Should sync when file in assembly changes");
+                Assert.That(synchronizer.SyncIfNeeded(newFiles, new string[0]), "Should sync when file in assembly changes");
 
                 var csprojContentAfter = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 StringAssert.Contains(newFile, csprojContentAfter);
@@ -421,7 +420,7 @@ namespace com.unity.ide.vscode.tests
                 var filesAfter = filesBefore.Skip(1).ToArray();
                 m_Builder.WithAssemblyData(files: filesAfter);
 
-                Assert.True(synchronizer.SyncIfNeeded(filesAfter.ToList(), new string[0]), "Should sync when file in assembly changes");
+                Assert.That(synchronizer.SyncIfNeeded(filesAfter.ToList(), new string[0]), "Should sync when file in assembly changes");
 
                 var csprojContentAfter = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 StringAssert.Contains(filesAfter[0], csprojContentAfter);
@@ -579,7 +578,8 @@ namespace com.unity.ide.vscode.tests
                 XmlDocument scriptProject = XMLUtilities.FromText(csprojFileContents);
                 XMLUtilities.AssertCompileItemsMatchExactly(scriptProject, new[] { "file.cs" });
                 XMLUtilities.AssertNonCompileItemsMatchExactly(scriptProject, new string[0]);
-                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"reference\">\\W*<HintPath>{SynchronizerBuilder.projectDirectory}/{referenceDll}\\W*</HintPath>\\W*</Reference>"));
+                string pattern = $"<Reference Include=\"reference\">\\W*<HintPath>{SynchronizerBuilder.projectDirectory}/{referenceDll}\\W*</HintPath>\\W*</Reference>";
+                Assert.That(csprojFileContents, Does.Match(pattern));
             }
 
             [Test]

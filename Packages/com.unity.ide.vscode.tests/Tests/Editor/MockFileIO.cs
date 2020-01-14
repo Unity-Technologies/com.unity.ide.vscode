@@ -63,7 +63,7 @@ namespace com.unity.ide.vscode.tests
         {
             var fileName = "fileName";
             m_FileIo.WriteAllText(fileName, "");
-            Assert.True(m_FileIo.Exists(fileName));
+            Assert.That(m_FileIo.Exists(fileName));
         }
 
         [Test]
