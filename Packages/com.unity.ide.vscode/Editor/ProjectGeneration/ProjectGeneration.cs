@@ -31,6 +31,34 @@ namespace com.unity.ide.vscode
             CSharp
         }
 
+        const string k_SolutionFileFormat = "\r\n" +
+            "Microsoft Visual Studio Solution File, Format Version {0}\r\n" +
+            "# Visual Studio {1}\r\n" +
+            "{2}\r\n" +
+            "Global\r\n" +
+            "\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\r\n" +
+            "\t\tUnity|Any CPU = Unity|Any CPU\r\n" +
+            "\tEndGlobalSection\r\n" +
+            "\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\r\n" +
+            "{3}\r\n" +
+            "\tEndGlobalSection\r\n" +
+            "\tGlobalSection(SolutionProperties) = preSolution\r\n" +
+            "\t\tHideSolutionNode = FALSE\r\n" +
+            "\tEndGlobalSection\r\n" +
+            "EndGlobal\r\n";
+
+        const string k_ProjectFooter =
+            "  </ItemGroup>\r\n" +
+            "  <Import Project=\"$(MSBuildToolsPath)\\Microsoft.CSharp.targets\" />\r\n" +
+            "  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.\r\n" +
+            "       Other similar extension points exist, see Microsoft.Common.targets.\r\n" +
+            "  <Target Name=\"BeforeBuild\">\r\n" +
+            "  </Target>\r\n" +
+            "  <Target Name=\"AfterBuild\">\r\n" +
+            "  </Target>\r\n" +
+            "  -->\r\n" +
+            "</Project>\r\n";
+
         const string k_MSBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
 
         const string k_WindowsNewline = "\r\n";
@@ -109,9 +137,10 @@ namespace com.unity.ide.vscode
             { "raytrace", ScriptingLanguage.None }
         };
 
-        string m_SolutionProjectEntryTemplate = string.Join("\r\n", @"Project(""{{{0}}}"") = ""{1}"", ""{2}"", ""{{{3}}}""", @"EndProject").Replace("    ", "\t");
+        const string k_SolutionProjectEntryTemplate = "Project(\"{{{0}}}\") = \"{1}\", \"{2}\", \"{{{3}}}\"\r\nEndProject";
 
-        string m_SolutionProjectConfigurationTemplate = string.Join("\r\n", @"        {{{0}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU", @"        {{{0}}}.Debug|Any CPU.Build.0 = Debug|Any CPU").Replace("    ", "\t");
+        const string k_SolutionProjectConfigurationTemplate =
+            "\t\t{{{0}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU";
 
         static readonly string[] k_ReimportSyncExtensions = { ".dll", ".asmdef" };
 
@@ -139,6 +168,7 @@ namespace com.unity.ide.vscode
         readonly IFileIO m_FileIOProvider;
         readonly IGUIDGenerator m_GUIDProvider;
 
+        const string k_CsProjectExtension = ".csproj";
         const string k_ToolsVersion = "4.0";
         const string k_ProductVersion = "10.0.20506";
         const string k_BaseDirectory = ".";
@@ -455,7 +485,7 @@ namespace com.unity.ide.vscode
                 projectBuilder.Append("  <ItemGroup>\r\n");
                 foreach (Assembly reference in assembly.assemblyReferences.Where(i => i.sourceFiles.Any(ShouldFileBePartOfSolution)))
                 {
-                    projectBuilder.Append("    <ProjectReference Include=\"").Append(reference.name).Append(GetProjectExtension()).Append("\">\r\n");
+                    projectBuilder.Append("    <ProjectReference Include=\"").Append(reference.name).Append(k_CsProjectExtension + "\">\r\n");
                     projectBuilder.Append("      <Project>{").Append(ProjectGuid(reference.name)).Append("}</Project>\r\n");
                     projectBuilder.Append("      <Name>").Append(reference.name).Append("</Name>\r\n");
                     projectBuilder.Append("      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>\r\n");
@@ -463,7 +493,7 @@ namespace com.unity.ide.vscode
                 }
             }
 
-            projectBuilder.Append(ProjectFooter());
+            projectBuilder.Append(k_ProjectFooter);
             return projectBuilder.ToString();
         }
 
@@ -653,7 +683,7 @@ namespace com.unity.ide.vscode
             var relevantAssemblies = RelevantAssembliesForMode(assemblies);
             string projectEntries = GetProjectEntries(relevantAssemblies);
             string projectConfigurations = string.Join(k_WindowsNewline, relevantAssemblies.Select(i => GetProjectActiveConfigurations(ProjectGuid(i.name))).ToArray());
-            return string.Format(GetSolutionText(), fileversion, vsversion, projectEntries, projectConfigurations);
+            return string.Format(k_SolutionFileFormat, fileversion, vsversion, projectEntries, projectConfigurations);
         }
 
         static IEnumerable<Assembly> RelevantAssembliesForMode(IEnumerable<Assembly> assemblies)
@@ -668,7 +698,7 @@ namespace com.unity.ide.vscode
         string GetProjectEntries(IEnumerable<Assembly> assemblies)
         {
             var projectEntries = assemblies.Select(i => string.Format(
-                m_SolutionProjectEntryTemplate,
+                k_SolutionProjectEntryTemplate,
                 SolutionGuid(i),
                 i.name,
                 Path.GetFileName(ProjectFile(i)),
@@ -684,7 +714,7 @@ namespace com.unity.ide.vscode
         string GetProjectActiveConfigurations(string projectGuid)
         {
             return string.Format(
-                m_SolutionProjectConfigurationTemplate,
+                k_SolutionProjectConfigurationTemplate,
                 projectGuid);
         }
 
@@ -729,16 +759,6 @@ namespace com.unity.ide.vscode
         string SolutionGuid(Assembly assembly)
         {
             return m_GUIDProvider.SolutionGuid(m_ProjectName, GetExtensionOfSourceFiles(assembly.sourceFiles));
-        }
-
-        static string ProjectFooter()
-        {
-            return GetProjectFooterTemplate();
-        }
-
-        static string GetProjectExtension()
-        {
-            return ".csproj";
         }
 
         void WriteVSCodeSettingsFiles()
