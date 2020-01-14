@@ -356,7 +356,8 @@ namespace com.unity.ide.vscode
                         continue;
                     }
 
-                    assemblyName = Path.GetFileNameWithoutExtension(assemblyName);
+                    Utility.GetFileNameWithoutExtension(assemblyName, out var start, out var end);
+                    assemblyName = assemblyName.Substring(start, end - start);
 
                     if (!stringBuilders.TryGetValue(assemblyName, out var projectBuilder))
                     {
@@ -431,9 +432,8 @@ namespace com.unity.ide.vscode
                 if (!HasValidExtension(file))
                     continue;
 
-                var extension = Path.GetExtension(file).ToLower();
                 var fullFile = EscapedRelativePathFor(file);
-                if (".dll" != extension)
+                if (!Utility.HasFileExtension(file, ".dll"))
                 {
                     projectBuilder.Append("     <Compile Include=\"").Append(fullFile).Append("\" />").Append(k_WindowsNewline);
                 }
@@ -489,9 +489,10 @@ namespace com.unity.ide.vscode
             var escapedFullPath = SecurityElement.Escape(fullReference);
             escapedFullPath = escapedFullPath.Replace("\\\\", "/");
             escapedFullPath = escapedFullPath.Replace("\\", "/");
-            projectBuilder.Append("    <Reference Include=\"").Append(Path.GetFileNameWithoutExtension(escapedFullPath)).Append("\">").Append(k_WindowsNewline);
-            projectBuilder.Append("        <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
-            projectBuilder.Append("    </Reference>").Append(k_WindowsNewline);
+            Utility.GetFileNameWithoutExtension(escapedFullPath, out var start, out var end);
+            projectBuilder.Append(" <Reference Include=\"").Append(escapedFullPath, start, end - start).Append("\">").Append(k_WindowsNewline);
+            projectBuilder.Append(" <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
+            projectBuilder.Append(" </Reference>").Append(k_WindowsNewline);
         }
 
         public string ProjectFile(Assembly assembly)
@@ -702,8 +703,9 @@ namespace com.unity.ide.vscode
 
         static string SkipPathPrefix(string path, string prefix)
         {
-            if (path.StartsWith($@"{prefix}\"))
-                return path.Substring(prefix.Length + 1);
+            var prefixLength = prefix.Length;
+            if (path.Length > prefixLength && path[prefixLength] == '\\' && string.CompareOrdinal(path, 0, prefix, 0, prefixLength) == 0)
+                return path.Substring(prefixLength + 1);
             return path;
         }
 
