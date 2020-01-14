@@ -146,7 +146,7 @@ namespace com.unity.ide.vscode
         const string k_TargetLanguageVersion = "latest";
 
         public ProjectGeneration(string tempDirectory)
-            : this(tempDirectory, new AssemblyNameProvider(), new FileIOProvider(), new GUIDProvider()) { }
+            : this(tempDirectory, new AssemblyNameProvider(), new FileIO(), new GUIDGenerator()) { }
 
         public ProjectGeneration(string tempDirectory, IAssemblyNameProvider assemblyNameProvider, IFileIO fileIO, IGUIDGenerator guidGenerator)
         {

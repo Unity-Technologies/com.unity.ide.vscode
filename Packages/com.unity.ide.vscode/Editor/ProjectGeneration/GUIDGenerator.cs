@@ -6,7 +6,7 @@ namespace com.unity.ide.vscode
         string SolutionGuid(string projectName, string extension);
     }
 
-    class GUIDProvider : IGUIDGenerator
+    class GUIDGenerator : IGUIDGenerator
     {
         public string ProjectGuid(string projectName, string assemblyName)
         {

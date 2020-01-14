@@ -13,7 +13,7 @@ namespace com.unity.ide.vscode
         void CreateDirectory(string pathName);
     }
 
-    class FileIOProvider : IFileIO
+    class FileIO : IFileIO
     {
         public bool Exists(string fileName)
         {
