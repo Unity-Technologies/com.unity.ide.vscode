@@ -31,7 +31,7 @@ namespace com.unity.ide.vscode
             CSharp
         }
 
-        public static readonly string MSBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
+        const string k_MSBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
 
         const string k_WindowsNewline = "\r\n";
 
@@ -365,7 +365,7 @@ namespace com.unity.ide.vscode
                         stringBuilders[assemblyName] = projectBuilder;
                     }
 
-                    projectBuilder.Append("     <None Include=\"").Append(EscapedRelativePathFor(asset)).Append("\" />").Append(k_WindowsNewline);
+                    projectBuilder.Append("     <None Include=\"").Append(EscapedRelativePathFor(asset)).Append("\" />\r\n");
                 }
             }
 
@@ -425,7 +425,7 @@ namespace com.unity.ide.vscode
                 var fullFile = EscapedRelativePathFor(file);
                 if (!Utility.HasFileExtension(file, ".dll"))
                 {
-                    projectBuilder.Append("     <Compile Include=\"").Append(fullFile).Append("\" />").Append(k_WindowsNewline);
+                    projectBuilder.Append("     <Compile Include=\"").Append(fullFile).Append("\" />\r\n");
                 }
                 else
                 {
@@ -455,17 +455,17 @@ namespace com.unity.ide.vscode
 
             if (0 < assembly.assemblyReferences.Length)
             {
-                projectBuilder.Append("  </ItemGroup>").Append(k_WindowsNewline);
-                projectBuilder.Append("  <ItemGroup>").Append(k_WindowsNewline);
+                projectBuilder.Append("  </ItemGroup>\r\n");
+                projectBuilder.Append("  <ItemGroup>\r\n");
                 foreach (Assembly reference in assembly.assemblyReferences.Where(i => i.sourceFiles.Any(ShouldFileBePartOfSolution)))
                 {
                     var referencedProject = reference.outputPath;
 
-                    projectBuilder.Append("    <ProjectReference Include=\"").Append(reference.name).Append(GetProjectExtension()).Append("\">").Append(k_WindowsNewline);
-                    projectBuilder.Append("      <Project>{").Append(ProjectGuid(reference.name)).Append("}</Project>").Append(k_WindowsNewline);
-                    projectBuilder.Append("      <Name>").Append(reference.name).Append("</Name>").Append(k_WindowsNewline);
-                    projectBuilder.Append("      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>").Append(k_WindowsNewline);
-                    projectBuilder.Append("    </ProjectReference>").Append(k_WindowsNewline);
+                    projectBuilder.Append("    <ProjectReference Include=\"").Append(reference.name).Append(GetProjectExtension()).Append("\">\r\n");
+                    projectBuilder.Append("      <Project>{").Append(ProjectGuid(reference.name)).Append("}</Project>\r\n");
+                    projectBuilder.Append("      <Name>").Append(reference.name).Append("</Name>\r\n");
+                    projectBuilder.Append("      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>\r\n");
+                    projectBuilder.Append("    </ProjectReference>\r\n");
                 }
             }
 
@@ -480,9 +480,9 @@ namespace com.unity.ide.vscode
             escapedFullPath = escapedFullPath.Replace("\\\\", "/");
             escapedFullPath = escapedFullPath.Replace("\\", "/");
             Utility.GetFileNameWithoutExtension(escapedFullPath, out var start, out var end);
-            projectBuilder.Append(" <Reference Include=\"").Append(escapedFullPath, start, end - start).Append("\">").Append(k_WindowsNewline);
-            projectBuilder.Append(" <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
-            projectBuilder.Append(" </Reference>").Append(k_WindowsNewline);
+            projectBuilder.Append(" <Reference Include=\"").Append(escapedFullPath, start, end - start).Append("\">\r\n");
+            projectBuilder.Append(" <HintPath>").Append(escapedFullPath).Append("</HintPath>\r\n");
+            projectBuilder.Append(" </Reference>\r\n");
         }
 
         public string ProjectFile(Assembly assembly)
@@ -576,7 +576,7 @@ namespace com.unity.ide.vscode
         }
 
         static void GetProjectHeaderTemplate(
-            StringBuilder builder,
+            StringBuilder sb,
             string assemblyGUID,
             string assemblyName,
             string defines,
@@ -584,45 +584,45 @@ namespace com.unity.ide.vscode
             string analyzerBlock
         )
         {
-            builder.Append(@"<?xml version=""1.0"" encoding=""utf-8""?>").Append(k_WindowsNewline);
-            builder.Append(@"<Project ToolsVersion=""").Append(k_ToolsVersion).Append(@""" DefaultTargets=""Build"" xmlns=""").Append(MSBuildNamespaceUri).Append(@""">").Append(k_WindowsNewline);
-            builder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"    <LangVersion>").Append(k_TargetLanguageVersion).Append("</LangVersion>").Append(k_WindowsNewline);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"    <Configuration Condition="" '$(Configuration)' == '' "">Debug</Configuration>").Append(k_WindowsNewline);
-            builder.Append(@"    <Platform Condition="" '$(Platform)' == '' "">AnyCPU</Platform>").Append(k_WindowsNewline);
-            builder.Append(@"    <ProductVersion>").Append(k_ProductVersion).Append("</ProductVersion>").Append(k_WindowsNewline);
-            builder.Append(@"    <SchemaVersion>2.0</SchemaVersion>").Append(k_WindowsNewline);
-            builder.Append(@"    <RootNamespace>").Append(EditorSettings.projectGenerationRootNamespace).Append("</RootNamespace>").Append(k_WindowsNewline);
-            builder.Append(@"    <ProjectGuid>{").Append(assemblyGUID).Append("}</ProjectGuid>").Append(k_WindowsNewline);
-            builder.Append(@"    <OutputType>Library</OutputType>").Append(k_WindowsNewline);
-            builder.Append(@"    <AppDesignerFolder>Properties</AppDesignerFolder>").Append(k_WindowsNewline);
-            builder.Append(@"    <AssemblyName>").Append(assemblyName).Append("</AssemblyName>").Append(k_WindowsNewline);
-            builder.Append(@"    <TargetFrameworkVersion>").Append(k_TargetFrameworkVersion).Append("</TargetFrameworkVersion>").Append(k_WindowsNewline);
-            builder.Append(@"    <FileAlignment>512</FileAlignment>").Append(k_WindowsNewline);
-            builder.Append(@"    <BaseDirectory>").Append(k_BaseDirectory).Append("</BaseDirectory>").Append(k_WindowsNewline);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"  <PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "">").Append(k_WindowsNewline);
-            builder.Append(@"    <DebugSymbols>true</DebugSymbols>").Append(k_WindowsNewline);
-            builder.Append(@"    <DebugType>full</DebugType>").Append(k_WindowsNewline);
-            builder.Append(@"    <Optimize>false</Optimize>").Append(k_WindowsNewline);
-            builder.Append(@"    <OutputPath>Temp\bin\Debug\</OutputPath>").Append(k_WindowsNewline);
-            builder.Append(@"    <DefineConstants>").Append(defines).Append("</DefineConstants>").Append(k_WindowsNewline);
-            builder.Append(@"    <ErrorReport>prompt</ErrorReport>").Append(k_WindowsNewline);
-            builder.Append(@"    <WarningLevel>4</WarningLevel>").Append(k_WindowsNewline);
-            builder.Append(@"    <NoWarn>0169</NoWarn>").Append(k_WindowsNewline);
-            builder.Append(@"    <AllowUnsafeBlocks>").Append(allowUnsafe).Append("</AllowUnsafeBlocks>").Append(k_WindowsNewline);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"    <NoConfig>true</NoConfig>").Append(k_WindowsNewline);
-            builder.Append(@"    <NoStdLib>true</NoStdLib>").Append(k_WindowsNewline);
-            builder.Append(@"    <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>").Append(k_WindowsNewline);
-            builder.Append(@"    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>").Append(k_WindowsNewline);
-            builder.Append(@"    <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>").Append(k_WindowsNewline);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(analyzerBlock);
-            builder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
+            sb.Append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n");
+            sb.Append("<Project ToolsVersion=\"" + k_ToolsVersion + "\" DefaultTargets=\"Build\" xmlns=\"" + k_MSBuildNamespaceUri + "\">\r\n");
+            sb.Append("  <PropertyGroup>\r\n");
+            sb.Append("    <LangVersion>" + k_TargetLanguageVersion + "</LangVersion>\r\n");
+            sb.Append("  </PropertyGroup>\r\n");
+            sb.Append("  <PropertyGroup>\r\n");
+            sb.Append("    <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>\r\n");
+            sb.Append("    <Platform Condition=\" '$(Platform)' == '' \">AnyCPU</Platform>\r\n");
+            sb.Append("    <ProductVersion>" + k_ProductVersion + "</ProductVersion>\r\n");
+            sb.Append("    <SchemaVersion>2.0</SchemaVersion>\r\n");
+            sb.Append("    <RootNamespace>").Append(EditorSettings.projectGenerationRootNamespace).Append("</RootNamespace>\r\n");
+            sb.Append("    <ProjectGuid>{").Append(assemblyGUID).Append("}</ProjectGuid>\r\n");
+            sb.Append("    <OutputType>Library</OutputType>\r\n");
+            sb.Append("    <AppDesignerFolder>Properties</AppDesignerFolder>\r\n");
+            sb.Append("    <AssemblyName>").Append(assemblyName).Append("</AssemblyName>\r\n");
+            sb.Append("    <TargetFrameworkVersion>" + k_TargetFrameworkVersion + "</TargetFrameworkVersion>\r\n");
+            sb.Append("    <FileAlignment>512</FileAlignment>\r\n");
+            sb.Append("    <BaseDirectory>" + k_BaseDirectory + "</BaseDirectory>\r\n");
+            sb.Append("  </PropertyGroup>\r\n");
+            sb.Append("  <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' \">\r\n");
+            sb.Append("    <DebugSymbols>true</DebugSymbols>\r\n");
+            sb.Append("    <DebugType>full</DebugType>\r\n");
+            sb.Append("    <Optimize>false</Optimize>\r\n");
+            sb.Append("    <OutputPath>Temp\\bin\\Debug\\</OutputPath>\r\n");
+            sb.Append("    <DefineConstants>").Append(defines).Append("</DefineConstants>\r\n");
+            sb.Append("    <ErrorReport>prompt</ErrorReport>\r\n");
+            sb.Append("    <WarningLevel>4</WarningLevel>\r\n");
+            sb.Append("    <NoWarn>0169</NoWarn>\r\n");
+            sb.Append("    <AllowUnsafeBlocks>").Append(allowUnsafe).Append("</AllowUnsafeBlocks>\r\n");
+            sb.Append("  </PropertyGroup>\r\n");
+            sb.Append("  <PropertyGroup>\r\n");
+            sb.Append("    <NoConfig>true</NoConfig>\r\n");
+            sb.Append("    <NoStdLib>true</NoStdLib>\r\n");
+            sb.Append("    <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>\r\n");
+            sb.Append("    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>\r\n");
+            sb.Append("    <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>\r\n");
+            sb.Append("  </PropertyGroup>\r\n");
+            sb.Append(analyzerBlock).Append("\r\n");
+            sb.Append("  <ItemGroup>\r\n");
         }
 
         void SyncSolution(IEnumerable<Assembly> assemblies)
