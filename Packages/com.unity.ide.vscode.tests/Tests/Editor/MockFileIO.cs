@@ -9,7 +9,6 @@ namespace com.unity.ide.vscode.tests
     {
         Dictionary<string, string> fileToContent = new Dictionary<string, string>();
         public int WriteTimes { get; private set; }
-        public int ReadTimes { get; private set; }
         public int ExistTimes { get; private set; }
 
         public bool Exists(string fileName)
@@ -20,7 +19,6 @@ namespace com.unity.ide.vscode.tests
 
         public string ReadAllText(string fileName)
         {
-            ++ReadTimes;
             return fileToContent[fileName];
         }
 
@@ -138,17 +136,6 @@ namespace com.unity.ide.vscode.tests
             Assert.AreEqual(1, m_FileIo.WriteTimes);
             m_FileIo.WriteAllText(fileName, "");
             Assert.AreEqual(2, m_FileIo.WriteTimes);
-        }
-
-        [Test]
-        public void CallingRead_IncreaseCounter()
-        {
-            var fileName = "fileName";
-            m_FileIo.WriteAllText(fileName, "");
-            m_FileIo.ReadAllText(fileName);
-            Assert.AreEqual(1, m_FileIo.ReadTimes);
-            m_FileIo.ReadAllText(fileName);
-            Assert.AreEqual(2, m_FileIo.ReadTimes);
         }
     }
 }

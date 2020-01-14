@@ -403,16 +403,6 @@ namespace com.unity.ide.vscode
 
         void SyncFileIfNotChanged(string filename, string newContents)
         {
-            if (m_FileIOProvider.Exists(filename))
-            {
-                var currentContents = m_FileIOProvider.ReadAllText(filename);
-
-                if (currentContents == newContents)
-                {
-                    return;
-                }
-            }
-
             m_FileIOProvider.WriteAllText(filename, newContents);
         }
 

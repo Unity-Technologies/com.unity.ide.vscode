@@ -27,7 +27,6 @@ namespace com.unity.ide.vscode.tests
         public bool FileExists(string fileName) => m_FileIoMock.Exists(fileName);
         public void DeleteFile(string fileName) => m_FileIoMock.DeleteFile(fileName);
         public int WriteTimes => m_FileIoMock.WriteTimes;
-        public int ReadTimes => m_FileIoMock.ReadTimes;
 
         public Assembly Assembly
         {

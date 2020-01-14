@@ -51,7 +51,7 @@ namespace com.unity.ide.vscode.tests
                 Assert.AreEqual(3, m_Builder.WriteTimes); // Once for csproj, once for solution, and once for vscode settings
 
                 synchronizer.Sync();
-                Assert.AreEqual(3, m_Builder.WriteTimes, "When content doesn't change we shouldn't re-sync");
+                Assert.AreEqual(5, m_Builder.WriteTimes, "Solution file is not rewritten (but csproj and vscode settings are)");
             }
 
             [Test]
