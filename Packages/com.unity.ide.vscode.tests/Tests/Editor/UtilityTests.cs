@@ -40,5 +40,17 @@ namespace com.unity.ide.vscode.tests
         {
             Assert.That(Utility.HasFileExtension(path, ext), Is.EqualTo(result));
         }
+
+        [TestCase("", false)]
+        [TestCase("/", true)]
+        [TestCase("c", false)]
+        [TestCase("c:", true)]
+        [TestCase("hello.txt", false)]
+        [TestCase("/hello.txt", true)]
+        [TestCase(@"c:\hello.txt", true)]
+        public void IsPathRooted(string path, bool result)
+        {
+            Assert.That(Utility.IsPathRooted(path), Is.EqualTo(result));
+        }
     }
 }

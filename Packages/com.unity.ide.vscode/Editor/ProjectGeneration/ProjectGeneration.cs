@@ -449,7 +449,7 @@ namespace com.unity.ide.vscode
 
             foreach (var reference in allReferences)
             {
-                string fullReference = Path.IsPathRooted(reference) ? reference : Path.Combine(ProjectDirectory, reference);
+                var fullReference = Utility.IsPathRooted(reference) ? reference : Path.Combine(ProjectDirectory, reference);
                 AppendReference(fullReference, projectBuilder);
             }
 

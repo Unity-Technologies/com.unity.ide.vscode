@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace com.unity.ide.vscode
 {
@@ -77,6 +78,15 @@ namespace com.unity.ide.vscode
 
             start = slash + 1;
             end = dot;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsPathRooted(string path)
+        {
+            var len = path.Length;
+            if (len == 0) return false;
+            var c = path[0];
+            return c == '/' || c == '\\' || (len > 1 && path[1] == ':');
         }
     }
 }
