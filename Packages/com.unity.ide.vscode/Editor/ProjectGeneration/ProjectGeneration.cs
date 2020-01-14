@@ -184,19 +184,19 @@ namespace VSCodeEditor
                 var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
                 var assemblyNames = new HashSet<string>(allProjectAssemblies.Select(assembly => Path.GetFileName(assembly.outputPath)));
 
-                System.Threading.Tasks.Parallel.For(0, allProjectAssemblies.Count, index =>
-                //foreach (var assembly in allProjectAssemblies)
+                //System.Threading.Tasks.Parallel.For(0, allProjectAssemblies.Count, index =>
+                foreach (var assembly in allProjectAssemblies)
                 {
-                    var assembly = allProjectAssemblies[index];
+                    //var assembly = allProjectAssemblies[index];
                     if (!affectedAndReimported.Contains(assembly.name))
                     {
-                        //continue;
-                        return;
+                        continue;
+                        //return;
                     }
 
                     SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly), assemblyNames);
-                });
-                //}
+                //});
+                }
 
                 Profiler.EndSample();
                 return true;
@@ -322,14 +322,14 @@ namespace VSCodeEditor
             SyncSolution(assemblies);
             var allProjectAssemblies = RelevantAssembliesForMode(assemblies).ToList();
             var assemblyNames = new HashSet<string>(allProjectAssemblies.Select(assembly => Path.GetFileName(assembly.outputPath)));
-            System.Threading.Tasks.Parallel.For(0, allProjectAssemblies.Count, index =>
-            //foreach (var assembly in allProjectAssemblies)
+            //System.Threading.Tasks.Parallel.For(0, allProjectAssemblies.Count, index =>
+            foreach (var assembly in allProjectAssemblies)
             {
-                var assembly = allProjectAssemblies[index];
+                //var assembly = allProjectAssemblies[index];
                 var responseFileData = ParseResponseFileData(assembly);
                 SyncProject(assembly, allAssetProjectParts, responseFileData, assemblyNames);
-            });
-            //}
+            //});
+            }
 
             WriteVSCodeSettingsFiles();
         }
@@ -521,14 +521,49 @@ namespace VSCodeEditor
             return projectBuilder.ToString();
         }
 
+        static readonly char[] toBeEscaped = new[] { '<', '>', '"', '&', '\\' };
+
+        static void AppendPathEscaped(StringBuilder dest, string path, int start, int end) // Note: start:end, not start+length
+        {
+            while (start < end) {
+                int j = path.IndexOfAny(toBeEscaped, start);
+                if (j == -1) {
+                    dest.Append(path, start, end - start);
+                    return;
+                }
+
+                dest.Append(path, start, j - start);
+                char c = path[j];
+                start = j + 1;
+                switch (c) {
+                case '\\':
+                    dest.Append('/');
+                    if (start < end && path[start] == '\\') ++start;
+                    continue;
+                case '<': dest.Append("&lt;"); continue;
+                case '>': dest.Append("&gt;"); continue;
+                case '&': dest.Append("&amp;"); continue;
+                case '"': dest.Append("&quot;"); continue;
+                default:
+                    throw new InvalidOperationException("should not happen: " + c);
+                }
+            }
+        }
+
         static void AppendReference(string fullReference, StringBuilder projectBuilder)
         {
             //replace \ with / and \\ with /
-            var escapedFullPath = SecurityElement.Escape(fullReference);
-            escapedFullPath = escapedFullPath.Replace("\\\\", "/");
-            escapedFullPath = escapedFullPath.Replace("\\", "/");
-            projectBuilder.Append(" <Reference Include=\"").Append(Utility.FileNameWithoutExtension(escapedFullPath)).Append("\">").Append(k_WindowsNewline);
-            projectBuilder.Append(" <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
+            //var escapedFullPath = SecurityElement.Escape(fullReference);
+            //escapedFullPath = escapedFullPath.Replace("\\\\", "/");
+            //escapedFullPath = escapedFullPath.Replace("\\", "/");
+            projectBuilder.Append(" <Reference Include=\"");
+            Utility.GetFileNameWithoutExtension(fullReference, out var start, out var end);
+            AppendPathEscaped(projectBuilder, fullReference, start, end);
+            //Utility.AppendFileNameWithoutExtension(projectBuilder, escapedFullPath);
+            projectBuilder.Append("\">").Append(k_WindowsNewline);
+            projectBuilder.Append(" <HintPath>");
+            AppendPathEscaped(projectBuilder, fullReference, 0, fullReference.Length);
+            projectBuilder.Append("</HintPath>").Append(k_WindowsNewline);
             projectBuilder.Append(" </Reference>").Append(k_WindowsNewline);
         }
 

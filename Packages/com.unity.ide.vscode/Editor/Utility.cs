@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace VSCodeEditor
 {
     public static class Utility
@@ -31,6 +33,40 @@ namespace VSCodeEditor
             }
 
             return path.Substring(indexOfSlash, indexOfDot - indexOfSlash);
+        }
+
+        public static void GetFileNameWithoutExtension(string path, out int start, out int end)
+        {
+            int extsep = path.Length;
+            int dirsep = extsep - 1;
+            while (dirsep >= 0) {
+                char c = path[dirsep];
+                if (c == '/' || c == '\\') { // TODO: not guaranteed to be normalized?
+                    break;
+                }
+                if (c == '.') {
+                    extsep = dirsep;
+                    while (dirsep >= 0) {
+                        c = path[dirsep];
+                        if (c == '/' || c == '\\') { // TODO: not guaranteed to be normalized?
+                            break;
+                        }
+                        --dirsep;
+                    }
+                    break;
+                }
+                --dirsep;
+            }
+            start = dirsep + 1;
+            end = extsep;
+        }
+
+        public static void AppendFileNameWithoutExtension(StringBuilder dest, string path)
+        {
+            if (path == null) return; // TODO: not guaranteed to be non-null?
+
+            GetFileNameWithoutExtension(path, out var start, out var end);
+            dest.Append(path, start, end - start);
         }
     }
 }
