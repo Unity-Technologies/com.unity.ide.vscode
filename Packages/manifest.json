@@ -1,6 +1,7 @@
 {
   "disableProjectUpdate": true,
   "dependencies": {
+    "com.unity.ide.rider": "1.1.4",
     "com.unity.package-validation-suite": "0.7.8-preview",
     "com.unity.test-framework": "1.1.3"
   }
