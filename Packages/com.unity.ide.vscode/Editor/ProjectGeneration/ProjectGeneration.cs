@@ -504,9 +504,9 @@ namespace com.unity.ide.vscode
             escapedFullPath = escapedFullPath.Replace("\\\\", "/");
             escapedFullPath = escapedFullPath.Replace("\\", "/");
             Utility.GetFileNameWithoutExtension(escapedFullPath, out var start, out var end);
-            projectBuilder.Append(" <Reference Include=\"").Append(escapedFullPath, start, end - start).Append("\">\r\n");
-            projectBuilder.Append(" <HintPath>").Append(escapedFullPath).Append("</HintPath>\r\n");
-            projectBuilder.Append(" </Reference>\r\n");
+            projectBuilder.Append(" <Reference Include=\"").Append(escapedFullPath, start, end - start).Append("\">\r\n" +
+                " <HintPath>").Append(escapedFullPath).Append("</HintPath>\r\n" +
+                " </Reference>\r\n");
         }
 
         public string ProjectFile(Assembly assembly)
