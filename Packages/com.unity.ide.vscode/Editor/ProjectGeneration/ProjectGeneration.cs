@@ -184,14 +184,13 @@ namespace com.unity.ide.vscode
                 var affectedNames = affectedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
                 var reimportedNames = reimportedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
                 var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
-                var assemblyNames = new HashSet<string>(allProjectAssemblies.Select(assembly => Path.GetFileName(assembly.outputPath)));
 
                 foreach (var assembly in allProjectAssemblies)
                 {
                     if (!affectedAndReimported.Contains(assembly.name))
                         continue;
 
-                    SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly), assemblyNames);
+                    SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly));
                 }
 
                 Profiler.EndSample();
@@ -297,11 +296,10 @@ namespace com.unity.ide.vscode
 
             SyncSolution(assemblies);
             var allProjectAssemblies = RelevantAssembliesForMode(assemblies).ToList();
-            var assemblyNames = new HashSet<string>(allProjectAssemblies.Select(assembly => Path.GetFileName(assembly.outputPath)));
             foreach (Assembly assembly in allProjectAssemblies)
             {
                 var responseFileData = ParseResponseFileData(assembly);
-                SyncProject(assembly, allAssetProjectParts, responseFileData, assemblyNames);
+                SyncProject(assembly, allAssetProjectParts, responseFileData);
             }
 
             WriteVSCodeSettingsFiles();
@@ -380,10 +378,9 @@ namespace com.unity.ide.vscode
         void SyncProject(
             Assembly assembly,
             Dictionary<string, string> allAssetsProjectParts,
-            List<ResponseFileData> responseFilesData,
-            HashSet<string> assemblyNames)
+            List<ResponseFileData> responseFilesData)
         {
-            SyncProjectFileIfNotChanged(ProjectFile(assembly), ProjectText(assembly, allAssetsProjectParts, responseFilesData, assemblyNames, GetAllRoslynAnalyzerPaths().ToArray()));
+            SyncProjectFileIfNotChanged(ProjectFile(assembly), ProjectText(assembly, allAssetsProjectParts, responseFilesData, GetAllRoslynAnalyzerPaths().ToArray()));
         }
 
         private IEnumerable<string> GetAllRoslynAnalyzerPaths()
@@ -410,7 +407,6 @@ namespace com.unity.ide.vscode
             Assembly assembly,
             Dictionary<string, string> allAssetsProjectParts,
             List<ResponseFileData> responseFilesData,
-            HashSet<string> assemblyNames,
             string[] roslynAnalyzerDllPaths)
         {
             var projectBuilder = new StringBuilder();
@@ -459,8 +455,6 @@ namespace com.unity.ide.vscode
                 projectBuilder.Append("  <ItemGroup>\r\n");
                 foreach (Assembly reference in assembly.assemblyReferences.Where(i => i.sourceFiles.Any(ShouldFileBePartOfSolution)))
                 {
-                    var referencedProject = reference.outputPath;
-
                     projectBuilder.Append("    <ProjectReference Include=\"").Append(reference.name).Append(GetProjectExtension()).Append("\">\r\n");
                     projectBuilder.Append("      <Project>{").Append(ProjectGuid(reference.name)).Append("}</Project>\r\n");
                     projectBuilder.Append("      <Name>").Append(reference.name).Append("</Name>\r\n");
