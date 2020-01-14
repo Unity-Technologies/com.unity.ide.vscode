@@ -501,15 +501,27 @@ namespace com.unity.ide.vscode
             Assembly assembly,
             List<ResponseFileData> responseFilesData,
             string[] roslynAnalyzerDllPaths,
-            StringBuilder builder
+            StringBuilder sb
         )
         {
             var otherArguments = GetOtherArgumentsFromResponseFilesData(responseFilesData);
+            bool allowUnsafe = assembly.compilerOptions.AllowUnsafeCode;
+            var defines = new HashSet<string>(StringComparer.Ordinal);
+            defines.Add("DEBUG");
+            defines.Add("TRACE");
+            foreach (var def in assembly.defines)
+                defines.Add(def);
+            foreach (var rfd in responseFilesData)
+            {
+                allowUnsafe |= rfd.Unsafe;
+                foreach (var def in rfd.Defines)
+                    defines.Add(def);
+            }
             GetProjectHeaderTemplate(
                 builder,
                 ProjectGuid(assembly.name),
                 assembly.name,
-                string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(assembly.defines).Concat(responseFilesData.SelectMany(x => x.Defines)).Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Distinct().ToArray()),
+                defines,
                 assembly.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe),
                 GenerateAnalyserItemGroup(otherArguments["analyzer"].Concat(otherArguments["a"])
                     .SelectMany(x => x.Split(';'))
@@ -608,7 +620,16 @@ namespace com.unity.ide.vscode
             sb.Append("    <DebugType>full</DebugType>\r\n");
             sb.Append("    <Optimize>false</Optimize>\r\n");
             sb.Append("    <OutputPath>Temp\\bin\\Debug\\</OutputPath>\r\n");
-            sb.Append("    <DefineConstants>").Append(defines).Append("</DefineConstants>\r\n");
+
+            sb.Append("    <DefineConstants>");
+            foreach (var def in defines)
+            {
+                sb.Append(def);
+                sb.Append(';');
+            }
+            sb.Length -= 1; // remove final ';' (we know there's always at least 2 defines)
+            sb.Append("</DefineConstants>\r\n");
+
             sb.Append("    <ErrorReport>prompt</ErrorReport>\r\n");
             sb.Append("    <WarningLevel>4</WarningLevel>\r\n");
             sb.Append("    <NoWarn>0169</NoWarn>\r\n");
