@@ -1,8 +1,6 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text;
 
-[assembly: InternalsVisibleTo("com.unity.ide.vscode.tests")]
 namespace com.unity.ide.vscode
 {
     interface IFileIO

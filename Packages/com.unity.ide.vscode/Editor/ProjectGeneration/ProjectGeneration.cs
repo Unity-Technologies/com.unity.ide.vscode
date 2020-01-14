@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,7 +10,6 @@ using UnityEditor.Compilation;
 using UnityEngine;
 using UnityEngine.Profiling;
 
-[assembly: InternalsVisibleTo("com.unity.ide.vscode.tests"), InternalsVisibleTo("com.unity.ide.vscode.integrationtests")]
 namespace com.unity.ide.vscode
 {
     interface IGenerator
