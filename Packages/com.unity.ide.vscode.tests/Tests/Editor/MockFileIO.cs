@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     class MockFileIO : IFileIO
     {
@@ -48,7 +48,7 @@ namespace VSCodeEditor.Tests
         }
     }
 
-    public class MockFileIOTests
+    class MockFileIOTests
     {
         MockFileIO m_FileIo;
 

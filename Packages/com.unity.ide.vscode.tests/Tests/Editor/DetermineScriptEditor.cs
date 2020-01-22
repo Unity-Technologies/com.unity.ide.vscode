@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.CodeEditor;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     [TestFixture]
     class DetermineScriptEditor

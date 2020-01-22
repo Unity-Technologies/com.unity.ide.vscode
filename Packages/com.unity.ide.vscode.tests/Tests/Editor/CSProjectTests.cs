@@ -8,7 +8,7 @@ using NUnit.Framework;
 using UnityEditor.Compilation;
 using UnityEditor;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     namespace CSProjectGeneration
     {

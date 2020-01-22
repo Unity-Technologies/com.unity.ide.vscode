@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor.Compilation;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     namespace SolutionGeneration
     {

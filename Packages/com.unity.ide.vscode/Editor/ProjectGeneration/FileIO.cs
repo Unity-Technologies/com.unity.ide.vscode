@@ -1,9 +1,11 @@
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace VSCodeEditor
+[assembly: InternalsVisibleTo("com.unity.ide.vscode.tests")]
+namespace com.unity.ide.vscode
 {
-    public interface IFileIO
+    interface IFileIO
     {
         bool Exists(string fileName);
 
