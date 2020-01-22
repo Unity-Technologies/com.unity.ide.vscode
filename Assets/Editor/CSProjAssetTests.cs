@@ -9,11 +9,11 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace VSCodeEditor.Runtime_spec.CSProject
+namespace com.unity.ide.vscode.tests.CSProject
 {
     [TestFixture]
     [Serializable]
-    public abstract class CleanupTest
+    abstract class CleanupTest
     {
         [SerializeField]
         protected IGenerator m_ProjectGeneration;
@@ -86,7 +86,7 @@ public class SimpleCSharpScript : MonoBehaviour
         }
     }
 
-    public class BuildTarget : CleanupTest
+    class BuildTarget : CleanupTest
     {
         [SerializeField]
         UnityEditor.BuildTarget m_Original;

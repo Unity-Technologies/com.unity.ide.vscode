@@ -1,6 +1,6 @@
-namespace VSCodeEditor
+namespace com.unity.ide.vscode
 {
-    public interface IGUIDGenerator
+    interface IGUIDGenerator
     {
         string ProjectGuid(string projectName, string assemblyName);
         string SolutionGuid(string projectName, string extension);

@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using Unity.CodeEditor;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     class SolutionGenerationTestBase
     {

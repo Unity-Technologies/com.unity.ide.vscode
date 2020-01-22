@@ -1,12 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEditor.Compilation;
 
-namespace VSCodeEditor
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
+/**
+    Why "DynamicProxyGenAssembly2" and not "Moq"?
+    It's the name of dynamic assembly created to contain dynamically generated proxy types (all of this is handled by yet another library, 
+    Castle's DynamicProxy) which is used by Moq. So you expose types to dynamic proxy assembly, not to Moq itself.
+*/
+namespace com.unity.ide.vscode
 {
-    public interface IAssemblyNameProvider
+    interface IAssemblyNameProvider
     {
         string GetAssemblyNameFromScriptPath(string path);
         IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution);

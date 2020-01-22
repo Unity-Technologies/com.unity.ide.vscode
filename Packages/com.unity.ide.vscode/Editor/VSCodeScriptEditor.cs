@@ -6,10 +6,10 @@ using UnityEditor;
 using UnityEngine;
 using Unity.CodeEditor;
 
-namespace VSCodeEditor
+namespace com.unity.ide.vscode
 {
     [InitializeOnLoad]
-    public class VSCodeScriptEditor : IExternalCodeEditor
+    class VSCodeScriptEditor : IExternalCodeEditor
     {
         const string vscode_argument = "vscode_arguments";
         const string vscode_generate_all = "unity_generate_all_csproj";

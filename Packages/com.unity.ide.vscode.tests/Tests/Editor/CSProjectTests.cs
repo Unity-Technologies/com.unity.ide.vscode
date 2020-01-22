@@ -6,7 +6,7 @@ using System.Xml;
 using NUnit.Framework;
 using UnityEditor.Compilation;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     namespace CSProjectGeneration
     {

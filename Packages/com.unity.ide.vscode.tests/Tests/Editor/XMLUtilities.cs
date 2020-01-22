@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     public static class XMLUtilities
     {

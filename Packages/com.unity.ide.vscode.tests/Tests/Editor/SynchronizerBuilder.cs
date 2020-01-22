@@ -4,7 +4,7 @@ using System.Linq;
 using Moq;
 using UnityEditor.Compilation;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     class SynchronizerBuilder
     {

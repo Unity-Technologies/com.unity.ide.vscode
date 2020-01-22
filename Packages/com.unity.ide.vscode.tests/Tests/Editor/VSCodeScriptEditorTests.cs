@@ -2,10 +2,10 @@ using Moq;
 using NUnit.Framework;
 using Unity.CodeEditor;
 
-namespace VSCodeEditor.Tests
+namespace com.unity.ide.vscode.tests
 {
     [TestFixture]
-    public class VSCodeScriptEditorTests
+    class VSCodeScriptEditorTests
     {
         IExternalCodeEditor editor;
 

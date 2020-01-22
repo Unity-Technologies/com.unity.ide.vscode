@@ -4,14 +4,14 @@ using System.IO;
 using System.Linq;
 using Unity.CodeEditor;
 
-namespace VSCodeEditor
+namespace com.unity.ide.vscode
 {
-    public interface IDiscovery
+    interface IDiscovery
     {
         CodeEditor.Installation[] PathCallback();
     }
 
-    public class VSCodeDiscovery : IDiscovery
+    class VSCodeDiscovery : IDiscovery
     {
         List<CodeEditor.Installation> m_Installations;
 

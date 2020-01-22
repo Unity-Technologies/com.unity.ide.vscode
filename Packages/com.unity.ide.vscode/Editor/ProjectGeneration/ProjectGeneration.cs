@@ -2,19 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Profiling;
 
-namespace VSCodeEditor
+[assembly: InternalsVisibleTo("com.unity.ide.vscode.tests"), InternalsVisibleTo("com.unity.ide.vscode.integrationtests")]
+namespace com.unity.ide.vscode
 {
-    public interface IGenerator
+    interface IGenerator
     {
         bool SyncIfNeeded(List<string> affectedFiles, string[] reimportedFiles);
         void Sync();
@@ -24,7 +25,7 @@ namespace VSCodeEditor
         bool SolutionExists();
     }
 
-    public class ProjectGeneration : IGenerator
+    class ProjectGeneration : IGenerator
     {
         enum ScriptingLanguage
         {

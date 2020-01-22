@@ -3,52 +3,55 @@ using System.Collections;
 using UnityEditor;
 using UnityEngine.TestTools;
 
-public class RecompileScripts : IEditModeTestYieldInstruction
+namespace com.unity.ide.vscode.tests.CSProject
 {
-    public RecompileScripts()
-        : this(true) { }
-
-    public RecompileScripts(bool expectScriptCompilation)
-        : this(expectScriptCompilation, true) { }
-
-    public RecompileScripts(bool expectScriptCompilation, bool expectScriptCompilationSuccess)
+    class RecompileScripts : IEditModeTestYieldInstruction
     {
-        ExpectScriptCompilation = expectScriptCompilation;
-        ExpectScriptCompilationSuccess = expectScriptCompilationSuccess;
-        ExpectDomainReload = true;
-    }
+        public RecompileScripts()
+            : this(true) { }
 
-    public bool ExpectDomainReload { get; }
-    public bool ExpectedPlaymodeState { get; }
-    public bool ExpectScriptCompilation { get; }
-    public bool ExpectScriptCompilationSuccess { get; }
-    public static RecompileScripts Current { get; private set; }
+        public RecompileScripts(bool expectScriptCompilation)
+            : this(expectScriptCompilation, true) { }
 
-    public IEnumerator Perform()
-    {
-        Current = this;
-
-        AssetDatabase.Refresh();
-
-        if (ExpectScriptCompilation && !EditorApplication.isCompiling)
+        public RecompileScripts(bool expectScriptCompilation, bool expectScriptCompilationSuccess)
         {
+            ExpectScriptCompilation = expectScriptCompilation;
+            ExpectScriptCompilationSuccess = expectScriptCompilationSuccess;
+            ExpectDomainReload = true;
+        }
+
+        public bool ExpectDomainReload { get; }
+        public bool ExpectedPlaymodeState { get; }
+        public bool ExpectScriptCompilation { get; }
+        public bool ExpectScriptCompilationSuccess { get; }
+        public static RecompileScripts Current { get; private set; }
+
+        public IEnumerator Perform()
+        {
+            Current = this;
+
+            AssetDatabase.Refresh();
+
+            if (ExpectScriptCompilation && !EditorApplication.isCompiling)
+            {
+                Current = null;
+                throw new Exception("Editor does not need to recompile scripts");
+            }
+
+            EditorApplication.UnlockReloadAssemblies();
+
+            while (EditorApplication.isCompiling)
+            {
+                yield return null;
+            }
+
             Current = null;
-            throw new Exception("Editor does not need to recompile scripts");
-        }
 
-        EditorApplication.UnlockReloadAssemblies();
-
-        while (EditorApplication.isCompiling)
-        {
-            yield return null;
-        }
-
-        Current = null;
-
-        if (ExpectScriptCompilationSuccess && EditorUtility.scriptCompilationFailed)
-        {
-            EditorApplication.LockReloadAssemblies();
-            throw new Exception("Script compilation failed");
+            if (ExpectScriptCompilationSuccess && EditorUtility.scriptCompilationFailed)
+            {
+                EditorApplication.LockReloadAssemblies();
+                throw new Exception("Script compilation failed");
+            }
         }
     }
 }

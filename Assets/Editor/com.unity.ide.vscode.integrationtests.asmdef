@@ -1,10 +1,7 @@
 {
-    "name": "Unity.VSCode.EditorTests",
+    "name": "com.unity.ide.vscode.integrationtests",
     "references": [
-		"Unity.VSCode.Editor"
-	],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+        "GUID:8b845b123ab418448a8be2935fa804e0"
     ],
     "includePlatforms": [
         "Editor"
@@ -13,9 +10,10 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Moq.dll"
+        ""
     ],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": []
+    "versionDefines": [],
+    "noEngineReferences": false
 }
