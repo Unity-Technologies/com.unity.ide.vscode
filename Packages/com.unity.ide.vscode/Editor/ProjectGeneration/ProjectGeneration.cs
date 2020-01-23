@@ -112,7 +112,7 @@ namespace VSCodeEditor
 
         string m_SolutionProjectEntryTemplate = string.Join("\r\n", @"Project(""{{{0}}}"") = ""{1}"", ""{2}"", ""{{{3}}}""", @"EndProject").Replace("    ", "\t");
 
-        string m_SolutionProjectConfigurationTemplate = string.Join("\r\n", @"        {{{0}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU", @"        {{{0}}}.Debug|Any CPU.Build.0 = Debug|Any CPU", @"        {{{0}}}.Release|Any CPU.ActiveCfg = Release|Any CPU", @"        {{{0}}}.Release|Any CPU.Build.0 = Release|Any CPU").Replace("    ", "\t");
+        string m_SolutionProjectConfigurationTemplate = string.Join("\r\n", @"        {{{0}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU", @"        {{{0}}}.Debug|Any CPU.Build.0 = Debug|Any CPU").Replace("    ", "\t");
 
         static readonly string[] k_ReimportSyncExtensions = { ".dll", ".asmdef" };
 
@@ -422,7 +422,6 @@ namespace VSCodeEditor
             var projectBuilder = new StringBuilder();
             ProjectHeader(assembly, responseFilesData, projectBuilder);
             var references = new List<string>();
-            var projectReferences = new List<Assembly>();
 
             foreach (string file in assembly.sourceFiles)
             {
@@ -456,7 +455,7 @@ namespace VSCodeEditor
             {
                 projectBuilder.Append("  </ItemGroup>").Append(k_WindowsNewline);
                 projectBuilder.Append("  <ItemGroup>").Append(k_WindowsNewline);
-                foreach (Assembly reference in assembly.assemblyReferences)
+                foreach (Assembly reference in assembly.assemblyReferences.Where(i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(ShouldFileBePartOfSolution)))
                 {
                     var referencedProject = reference.outputPath;
 
@@ -511,7 +510,7 @@ namespace VSCodeEditor
 
         static string GetSolutionText()
         {
-            return string.Join("\r\n", @"", @"Microsoft Visual Studio Solution File, Format Version {0}", @"# Visual Studio {1}", @"{2}", @"Global", @"    GlobalSection(SolutionConfigurationPlatforms) = preSolution", @"        Debug|Any CPU = Debug|Any CPU", @"        Release|Any CPU = Release|Any CPU", @"    EndGlobalSection", @"    GlobalSection(ProjectConfigurationPlatforms) = postSolution", @"{3}", @"    EndGlobalSection", @"    GlobalSection(SolutionProperties) = preSolution", @"        HideSolutionNode = FALSE", @"    EndGlobalSection", @"EndGlobal", @"").Replace("    ", "\t");
+            return string.Join("\r\n", @"", @"Microsoft Visual Studio Solution File, Format Version {0}", @"# Visual Studio {1}", @"{2}", @"Global", @"    GlobalSection(SolutionConfigurationPlatforms) = preSolution", @"        Debug|Any CPU = Debug|Any CPU", @"    EndGlobalSection", @"    GlobalSection(ProjectConfigurationPlatforms) = postSolution", @"{3}", @"    EndGlobalSection", @"    GlobalSection(SolutionProperties) = preSolution", @"        HideSolutionNode = FALSE", @"    EndGlobalSection", @"EndGlobal", @"").Replace("    ", "\t");
         }
 
         static string GetProjectFooterTemplate()
@@ -550,17 +549,8 @@ namespace VSCodeEditor
             builder.Append(@"    <DebugSymbols>true</DebugSymbols>").Append(k_WindowsNewline);
             builder.Append(@"    <DebugType>full</DebugType>").Append(k_WindowsNewline);
             builder.Append(@"    <Optimize>false</Optimize>").Append(k_WindowsNewline);
-            builder.Append(@"    <OutputPath>Temp\bin\Debug\</OutputPath>").Append(k_WindowsNewline);
+            builder.Append(@"    <OutputPath>Library/ScriptAssemblies/</OutputPath>").Append(k_WindowsNewline);
             builder.Append(@"    <DefineConstants>").Append(defines).Append("</DefineConstants>").Append(k_WindowsNewline);
-            builder.Append(@"    <ErrorReport>prompt</ErrorReport>").Append(k_WindowsNewline);
-            builder.Append(@"    <WarningLevel>4</WarningLevel>").Append(k_WindowsNewline);
-            builder.Append(@"    <NoWarn>0169</NoWarn>").Append(k_WindowsNewline);
-            builder.Append(@"    <AllowUnsafeBlocks>").Append(allowUnsafe).Append("</AllowUnsafeBlocks>").Append(k_WindowsNewline);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"  <PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' "">").Append(k_WindowsNewline);
-            builder.Append(@"    <DebugType>pdbonly</DebugType>").Append(k_WindowsNewline);
-            builder.Append(@"    <Optimize>true</Optimize>").Append(k_WindowsNewline);
-            builder.Append(@"    <OutputPath>Temp\bin\Release\</OutputPath>").Append(k_WindowsNewline);
             builder.Append(@"    <ErrorReport>prompt</ErrorReport>").Append(k_WindowsNewline);
             builder.Append(@"    <WarningLevel>4</WarningLevel>").Append(k_WindowsNewline);
             builder.Append(@"    <NoWarn>0169</NoWarn>").Append(k_WindowsNewline);
