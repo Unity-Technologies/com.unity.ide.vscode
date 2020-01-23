@@ -147,7 +147,7 @@ namespace VSCodeEditor
 
         public bool OpenProject(string path, int line, int column)
         {
-            if (path != "" && !SupportsExtension(path)) // Assets - Open C# Project passes empty path here
+            if (path != "" && (!SupportsExtension(path) || !File.Exists(path))) // Assets - Open C# Project passes empty path here
             {
                 return false;
             }
