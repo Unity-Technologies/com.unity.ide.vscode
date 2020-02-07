@@ -14,6 +14,7 @@ namespace VSCodeEditor
         string GetAssemblyNameFromScriptPath(string path);
         IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution);
         IEnumerable<string> GetAllAssetPaths();
+        IEnumerable<string> GetRoslynAnalyzerPaths();
         UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath);
         ResponseFileData ParseResponseFile(string responseFilePath, string projectDirectory, string[] systemReferenceDirectories);
         bool IsInternalizedPackagePath(string path);
@@ -111,6 +112,13 @@ namespace VSCodeEditor
             {
                 ProjectGenerationFlag |= preference;
             }
+        }
+
+        public IEnumerable<string> GetRoslynAnalyzerPaths()
+        {
+            return PluginImporter.GetAllImporters()
+                .Where(i => !i.isNativePlugin && AssetDatabase.GetLabels(i).SingleOrDefault(l => l == "RoslynAnalyzer") != null)
+                .Select(i => i.assetPath);
         }
     }
 }

@@ -12,6 +12,13 @@ namespace VSCodeEditor.Tests
             var compileItems = projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:Compile/@Include", GetModifiedXmlNamespaceManager(projectXml)).ToArray();
             CollectionAssert.AreEquivalent(RelativeAssetPathsFor(expectedCompileItems), compileItems);
         }
+        
+        public static void AssertAnalyzerItemsMatchExactly(XmlDocument projectXml, IEnumerable<string> expectedAnalyzers)
+        {
+            CollectionAssert.AreEquivalent(
+                expected: RelativeAssetPathsFor(expectedAnalyzers), 
+                actual:projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:Analyzer/@Include", GetModifiedXmlNamespaceManager(projectXml)).ToArray());
+        }
 
         public static void AssertNonCompileItemsMatchExactly(XmlDocument projectXml, IEnumerable<string> expectedNoncompileItems)
         {

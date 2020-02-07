@@ -149,5 +149,11 @@ namespace VSCodeEditor.Tests
             m_AssemblyProvider.Setup(x => x.ProjectSupportedExtensions).Returns(extensions);
             return this;
         }
+
+        public SynchronizerBuilder WithRoslynAnalyzers(string[] roslynAnalyzerDllPaths)
+        {
+            m_AssemblyProvider.Setup(p => p.GetRoslynAnalyzerPaths()).Returns(roslynAnalyzerDllPaths);
+            return this;
+        }
     }
 }

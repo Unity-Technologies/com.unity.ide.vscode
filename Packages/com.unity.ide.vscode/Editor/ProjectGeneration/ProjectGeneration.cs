@@ -292,7 +292,7 @@ namespace VSCodeEditor
             WriteVSCodeSettingsFiles();
         }
 
-        IEnumerable<ResponseFileData> ParseResponseFileData(Assembly assembly)
+        List<ResponseFileData> ParseResponseFileData(Assembly assembly)
         {
             var systemReferenceDirectories = CompilationPipeline.GetSystemAssemblyDirectories(assembly.compilerOptions.ApiCompatibilityLevel);
 
@@ -314,7 +314,7 @@ namespace VSCodeEditor
                 }
             }
 
-            return responseFilesData.Select(x => x.Value);
+            return responseFilesData.Select(x => x.Value).ToList();
         }
 
         Dictionary<string, string> GenerateAllAssetProjectParts()
@@ -364,10 +364,15 @@ namespace VSCodeEditor
         void SyncProject(
             Assembly assembly,
             Dictionary<string, string> allAssetsProjectParts,
-            IEnumerable<ResponseFileData> responseFilesData,
+            List<ResponseFileData> responseFilesData,
             HashSet<string> assemblyNames)
         {
-            SyncProjectFileIfNotChanged(ProjectFile(assembly), ProjectText(assembly, allAssetsProjectParts, responseFilesData, assemblyNames));
+            SyncProjectFileIfNotChanged(ProjectFile(assembly), ProjectText(assembly, allAssetsProjectParts, responseFilesData, assemblyNames, GetAllRoslynAnalyzerPaths().ToArray()));
+        }
+
+        private IEnumerable<string> GetAllRoslynAnalyzerPaths()
+        {
+            return m_AssemblyNameProvider.GetRoslynAnalyzerPaths();
         }
 
         void SyncProjectFileIfNotChanged(string path, string newContents)
@@ -398,11 +403,12 @@ namespace VSCodeEditor
         string ProjectText(
             Assembly assembly,
             Dictionary<string, string> allAssetsProjectParts,
-            IEnumerable<ResponseFileData> responseFilesData,
-            HashSet<string> assemblyNames)
+            List<ResponseFileData> responseFilesData,
+            HashSet<string> assemblyNames,
+            string[] roslynAnalyzerDllPaths)
         {
             var projectBuilder = new StringBuilder();
-            ProjectHeader(assembly, responseFilesData, projectBuilder);
+            ProjectHeader(assembly, responseFilesData, roslynAnalyzerDllPaths, projectBuilder);
             var references = new List<string>();
 
             foreach (string file in assembly.sourceFiles)
@@ -427,7 +433,7 @@ namespace VSCodeEditor
                 projectBuilder.Append(additionalAssetsForProject);
 
             var responseRefs = responseFilesData.SelectMany(x => x.FullPathReferences.Select(r => r));
-            foreach (var reference in assembly.compiledAssemblyReferences.Union(responseRefs).Union(references))
+            foreach (var reference in assembly.compiledAssemblyReferences.Union(responseRefs).Union(references).Except(roslynAnalyzerDllPaths))
             {
                 string fullReference = Path.IsPathRooted(reference) ? reference : Path.Combine(ProjectDirectory, reference);
                 AppendReference(fullReference, projectBuilder);
@@ -437,13 +443,14 @@ namespace VSCodeEditor
             {
                 projectBuilder.Append("  </ItemGroup>").Append(k_WindowsNewline);
                 projectBuilder.Append("  <ItemGroup>").Append(k_WindowsNewline);
-                foreach (Assembly reference in assembly.assemblyReferences.Where(i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(ShouldFileBePartOfSolution)))
+                foreach (Assembly reference in assembly.assemblyReferences.Where(i => i.sourceFiles.Any(ShouldFileBePartOfSolution)))
                 {
                     var referencedProject = reference.outputPath;
 
                     projectBuilder.Append("    <ProjectReference Include=\"").Append(reference.name).Append(GetProjectExtension()).Append("\">").Append(k_WindowsNewline);
                     projectBuilder.Append("      <Project>{").Append(ProjectGuid(reference.name)).Append("}</Project>").Append(k_WindowsNewline);
                     projectBuilder.Append("      <Name>").Append(reference.name).Append("</Name>").Append(k_WindowsNewline);
+                    projectBuilder.Append("      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>").Append(k_WindowsNewline);
                     projectBuilder.Append("    </ProjectReference>").Append(k_WindowsNewline);
                 }
             }
@@ -458,9 +465,9 @@ namespace VSCodeEditor
             var escapedFullPath = SecurityElement.Escape(fullReference);
             escapedFullPath = escapedFullPath.Replace("\\\\", "/");
             escapedFullPath = escapedFullPath.Replace("\\", "/");
-            projectBuilder.Append(" <Reference Include=\"").Append(Path.GetFileNameWithoutExtension(escapedFullPath)).Append("\">").Append(k_WindowsNewline);
-            projectBuilder.Append(" <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
-            projectBuilder.Append(" </Reference>").Append(k_WindowsNewline);
+            projectBuilder.Append("    <Reference Include=\"").Append(Path.GetFileNameWithoutExtension(escapedFullPath)).Append("\">").Append(k_WindowsNewline);
+            projectBuilder.Append("        <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
+            projectBuilder.Append("    </Reference>").Append(k_WindowsNewline);
         }
 
         public string ProjectFile(Assembly assembly)
@@ -477,17 +484,70 @@ namespace VSCodeEditor
 
         void ProjectHeader(
             Assembly assembly,
-            IEnumerable<ResponseFileData> responseFilesData,
+            List<ResponseFileData> responseFilesData,
+            string[] roslynAnalyzerDllPaths,
             StringBuilder builder
         )
         {
-            // TODO: .Concat(EditorUserBuildSettings.activeScriptCompilationDefines)
+            var otherArguments = GetOtherArgumentsFromResponseFilesData(responseFilesData);
             GetProjectHeaderTemplate(
                 builder,
                 ProjectGuid(assembly.name),
                 assembly.name,
-                string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(assembly.defines).Concat(responseFilesData.SelectMany(x => x.Defines)).Distinct().ToArray()),
-                assembly.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe));
+                string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(assembly.defines).Concat(responseFilesData.SelectMany(x => x.Defines)).Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Distinct().ToArray()),
+                assembly.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe),
+                GenerateAnalyserItemGroup(otherArguments["analyzer"].Concat(otherArguments["a"])
+                    .SelectMany(x => x.Split(';'))
+                    .Concat(roslynAnalyzerDllPaths)
+                    .Distinct()
+                    .ToArray()));
+        }
+
+        private static ILookup<string, string> GetOtherArgumentsFromResponseFilesData(List<ResponseFileData> responseFilesData)
+        {
+            var paths = responseFilesData.SelectMany(x =>
+                {
+                    return x.OtherArguments.Where(a => a.StartsWith("/") || a.StartsWith("-"))
+                                           .Select(b =>
+                    {
+                        var index = b.IndexOf(":", StringComparison.Ordinal);
+                        if (index > 0 && b.Length > index)
+                        {
+                            var key = b.Substring(1, index - 1);
+                            return new KeyValuePair<string, string>(key, b.Substring(index + 1));
+                        }
+
+                        const string warnaserror = "warnaserror";
+                        if (b.Substring(1).StartsWith(warnaserror))
+                        {
+                            return new KeyValuePair<string, string>(warnaserror, b.Substring(warnaserror.Length + 1));
+                        }
+
+                        return default;
+                    });
+                })
+              .Distinct()
+              .ToLookup(o => o.Key, pair => pair.Value);
+            return paths;
+        }
+
+        private static string GenerateAnalyserItemGroup(string[] paths)
+        {
+            //    <ItemGroup>
+            //        <Analyzer Include="..\packages\Comments_analyser.1.0.6626.21356\analyzers\dotnet\cs\Comments_analyser.dll" />
+            //        <Analyzer Include="..\packages\UnityEngineAnalyzer.1.0.0.0\analyzers\dotnet\cs\UnityEngineAnalyzer.dll" />
+            //    </ItemGroup>
+            if (!paths.Any())
+                return string.Empty;
+
+            var analyserBuilder = new StringBuilder();
+            analyserBuilder.Append("  <ItemGroup>").Append(k_WindowsNewline);
+            foreach (var path in paths)
+            {
+                analyserBuilder.Append($"    <Analyzer Include=\"{path}\" />").Append(k_WindowsNewline);
+            }
+            analyserBuilder.Append("  </ItemGroup>").Append(k_WindowsNewline);
+            return analyserBuilder.ToString();
         }
 
         static string GetSolutionText()
@@ -505,7 +565,8 @@ namespace VSCodeEditor
             string assemblyGUID,
             string assemblyName,
             string defines,
-            bool allowUnsafe
+            bool allowUnsafe,
+            string analyzerBlock
         )
         {
             builder.Append(@"<?xml version=""1.0"" encoding=""utf-8""?>").Append(k_WindowsNewline);
@@ -531,7 +592,7 @@ namespace VSCodeEditor
             builder.Append(@"    <DebugSymbols>true</DebugSymbols>").Append(k_WindowsNewline);
             builder.Append(@"    <DebugType>full</DebugType>").Append(k_WindowsNewline);
             builder.Append(@"    <Optimize>false</Optimize>").Append(k_WindowsNewline);
-            builder.Append(@"    <OutputPath>Library/ScriptAssemblies/</OutputPath>").Append(k_WindowsNewline);
+            builder.Append(@"    <OutputPath>Temp\bin\Debug\</OutputPath>").Append(k_WindowsNewline);
             builder.Append(@"    <DefineConstants>").Append(defines).Append("</DefineConstants>").Append(k_WindowsNewline);
             builder.Append(@"    <ErrorReport>prompt</ErrorReport>").Append(k_WindowsNewline);
             builder.Append(@"    <WarningLevel>4</WarningLevel>").Append(k_WindowsNewline);
@@ -545,6 +606,7 @@ namespace VSCodeEditor
             builder.Append(@"    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>").Append(k_WindowsNewline);
             builder.Append(@"    <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>").Append(k_WindowsNewline);
             builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
+            builder.Append(analyzerBlock);
             builder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
         }
 

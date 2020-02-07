@@ -485,6 +485,57 @@ namespace VSCodeEditor.Tests
                 StringAssert.Contains("<AllowUnsafeBlocks>True</AllowUnsafeBlocks>", csprojFileContents);
             }
 
+            [TestCase(new object[] { "C:/Analyzer.dll" })]
+            [TestCase(new object[] { "C:/Analyzer.dll", "C:/Analyzer2.dll" })]
+            [TestCase(new object[] { "../Analyzer.dll" })]
+            [TestCase(new object[] { "../Analyzer.dll", "C:/Analyzer2.dll" })]
+            public void AddAnalyzers(params string[] paths)
+            {
+                var combined = string.Join(";", paths);
+                const string additionalFileTemplate = @"    <Analyzer Include=""{0}"" />";
+                var expectedOutput = paths.Select(x => string.Format(additionalFileTemplate, x)).ToArray();
+
+                CheckOtherArgument(new[] { $"-a:{combined}" }, expectedOutput);
+                CheckOtherArgument(new[] { $"-analyzer:{combined}" }, expectedOutput);
+                CheckOtherArgument(new[] { $"/a:{combined}" }, expectedOutput);
+                CheckOtherArgument(new[] { $"/analyzer:{combined}" }, expectedOutput);
+            }
+
+            [Test]
+            public void CheckDefaultWarningLevel()
+            {
+                CheckOtherArgument(new string[0], $"<WarningLevel>4</WarningLevel>");
+            }
+
+            [Test]
+            public void CheckDefaultLangVersion()
+            {
+                CheckOtherArgument(new string[0], "<LangVersion>latest</LangVersion>");
+            }
+
+            public void CheckOtherArgument(string[] argumentString, params string[] expectedContents)
+            {
+                const string responseFile = "csc.rsp";
+                var synchronizer = m_Builder
+                    .WithResponseFileData(m_Builder.Assembly, responseFile, otherArguments: argumentString)
+                    .Build();
+
+                synchronizer.Sync();
+
+                var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
+                foreach (string expectedContent in expectedContents)
+                {
+                    StringAssert.Contains(
+                        expectedContent,
+                        csprojFileContents,
+                        $"Arguments: {string.Join(";", argumentString)} {Environment.NewLine}"
+                        + Environment.NewLine
+                        + $"Expected: {expectedContent.Replace("\r", "\\r").Replace("\n", "\\n")}"
+                        + Environment.NewLine
+                        + $"Actual: {csprojFileContents.Replace("\r", "\\r").Replace("\n", "\\n")}");
+                }
+            }
+
             [Test]
             public void AllowUnsafeFromAssemblySettings_AddBlockToCsproj()
             {
@@ -501,6 +552,19 @@ namespace VSCodeEditor.Tests
 
         class References : ProjectGenerationTestBase
         {
+            [Test]
+            public void RoslynAnalyzerDlls_WillBeIncluded()
+            {
+                var roslynAnalyzerDllPath = "Assets\\RoslynAnalyzer.dll";
+                var synchronizer = m_Builder.WithRoslynAnalyzers(new[] { roslynAnalyzerDllPath }).Build();
+
+                synchronizer.Sync();
+
+                string projectFile = m_Builder.ReadProjectFile(m_Builder.Assembly);
+                XmlDocument projectFileXml = XMLUtilities.FromText(projectFile);
+                XMLUtilities.AssertAnalyzerItemsMatchExactly(projectFileXml, new[] { roslynAnalyzerDllPath });
+            }
+
             [Test]
             public void DllInSourceFiles_WillBeAddedAsReference()
             {
