@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -5,20 +6,13 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using NUnit.Framework;
 using UnityEditor.Compilation;
+using UnityEditor;
 
 namespace VSCodeEditor.Tests
 {
     namespace CSProjectGeneration
     {
-        static class Util
-        {
-            internal static bool MatchesRegex(this string input, string pattern)
-            {
-                return Regex.Match(input, pattern).Success;
-            }
-        }
-
-        class Formatting : SolutionGenerationTestBase
+        class Formatting : ProjectGenerationTestBase
         {
             [TestCase(@"x & y.cs", @"x &amp; y.cs")]
             [TestCase(@"x ' y.cs", @"x &apos; y.cs")]
@@ -72,6 +66,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojContent = m_Builder.ReadProjectFile(m_Builder.Assembly);
+                var defines = string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Concat(m_Builder.Assembly.defines).Distinct().ToArray());
                 var content = new[]
                 {
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
@@ -97,8 +92,8 @@ namespace VSCodeEditor.Tests
                     "    <DebugSymbols>true</DebugSymbols>",
                     "    <DebugType>full</DebugType>",
                     "    <Optimize>false</Optimize>",
-                    "    <OutputPath>Library/ScriptAssemblies/</OutputPath>",
-                    "    <DefineConstants>DEBUG;TRACE</DefineConstants>",
+                    "    <OutputPath>Temp\\bin\\Debug\\</OutputPath>",
+                    $"    <DefineConstants>{defines}</DefineConstants>",
                     "    <ErrorReport>prompt</ErrorReport>",
                     "    <WarningLevel>4</WarningLevel>",
                     "    <NoWarn>0169</NoWarn>",
@@ -130,7 +125,7 @@ namespace VSCodeEditor.Tests
             }
         }
 
-        class GUID : SolutionGenerationTestBase
+        class GUID : ProjectGenerationTestBase
         {
             [Test]
             public void ProjectReference_MatchAssemblyGUID()
@@ -157,7 +152,7 @@ namespace VSCodeEditor.Tests
             }
         }
 
-        class Synchronization : SolutionGenerationTestBase
+        class Synchronization : ProjectGenerationTestBase
         {
             [Test]
             public void WontSynchronize_WhenNoFilesChanged()
@@ -195,9 +190,19 @@ namespace VSCodeEditor.Tests
                 Assert.IsTrue(m_Builder.FileExists(m_Builder.ProjectFilePath(assemblyA)));
                 Assert.IsTrue(m_Builder.FileExists(m_Builder.ProjectFilePath(assemblyB)));
             }
+
+            [Test]
+            public void NotInInternalizedPackage_WillResync()
+            {
+                var synchronizer = m_Builder.Build();
+                synchronizer.Sync();
+                var packageAsset = "packageAsset.cs";
+                m_Builder.WithPackageAsset(packageAsset, false);
+                Assert.IsTrue(synchronizer.SyncIfNeeded(new List<string>() { packageAsset }, new string[0]));
+            }
         }
 
-        class SourceFiles : SolutionGenerationTestBase
+        class SourceFiles : ProjectGenerationTestBase
         {
             [Test]
             public void NoCSFile_CreatesNoProjectFile()
@@ -268,6 +273,22 @@ namespace VSCodeEditor.Tests
             }
 
             [Test]
+            public void InInternalizedPackage_WillBeAddedToCompileInclude()
+            {
+                var synchronizer = m_Builder.WithPackageAsset(m_Builder.Assembly.sourceFiles[0], true).Build();
+                synchronizer.Sync();
+                StringAssert.DoesNotContain(m_Builder.Assembly.sourceFiles[0], m_Builder.ReadProjectFile(m_Builder.Assembly));
+            }
+
+            [Test]
+            public void NotInInternalizedPackage_WillBeAddedToCompileInclude()
+            {
+                var synchronizer = m_Builder.WithPackageAsset(m_Builder.Assembly.sourceFiles[0], false).Build();
+                synchronizer.Sync();
+                StringAssert.Contains(m_Builder.Assembly.sourceFiles[0], m_Builder.ReadProjectFile(m_Builder.Assembly));
+            }
+
+            [Test]
             public void CSharpFiles_WillBeIncluded()
             {
                 var synchronizer = m_Builder.Build();
@@ -283,8 +304,8 @@ namespace VSCodeEditor.Tests
             {
                 var nonCompileItems = new[]
                 {
-                    "ClassDiagram1.cd",
-                    "text.txt",
+                    "UnityShader.uss",
+                    "ComputerGraphic.cginc",
                     "Test.shader",
                 };
                 var synchronizer = m_Builder
@@ -315,6 +336,21 @@ namespace VSCodeEditor.Tests
                 var xmlDocument = XMLUtilities.FromText(csprojectContent);
                 XMLUtilities.AssertCompileItemsMatchExactly(xmlDocument, m_Builder.Assembly.sourceFiles);
                 XMLUtilities.AssertNonCompileItemsMatchExactly(xmlDocument, new string[0]);
+            }
+
+            [Test]
+            public void UnsupportedExtension_IsOverWrittenBy_UserSupportedExtensions()
+            {
+                var unsupported = new[] { "file.unsupported" };
+                var synchronizer = m_Builder
+                    .WithAssetFiles(unsupported)
+                    .AssignFilesToAssembly(unsupported, m_Builder.Assembly)
+                    .WithUserSupportedExtensions(new[] { "unsupported" })
+                    .Build();
+                synchronizer.Sync();
+                var xmlDocument = XMLUtilities.FromText(m_Builder.ReadProjectFile(m_Builder.Assembly));
+                XMLUtilities.AssertNonCompileItemsMatchExactly(xmlDocument, unsupported);
+
             }
 
             [TestCase(@"path\com.unity.cs")]
@@ -353,10 +389,10 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
                 var filesBefore = m_Builder.Assembly.sourceFiles;
                 const string newFile = "Newfile.cs";
-                var newFileArray = new[] { newFile };
-                m_Builder.WithAssemblyData(files: newFileArray);
+                var newFiles = new List<string> { newFile };
+                m_Builder.WithAssemblyData(files: newFiles.ToArray());
 
-                Assert.True(synchronizer.SyncIfNeeded(newFileArray.ToList(), new string[0]), "Should sync when file in assembly changes");
+                Assert.True(synchronizer.SyncIfNeeded(newFiles, new string[0]), "Should sync when file in assembly changes");
 
                 var csprojContentAfter = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 StringAssert.Contains(newFile, csprojContentAfter);
@@ -429,11 +465,11 @@ namespace VSCodeEditor.Tests
 
             static string[] s_BuiltinSupportedExtensionsForAssets =
             {
-                "asmdef", "uxml", "uss", "shader", "compute", "cginc", "hlsl", "glslinc", "template", "raytrace"
+                "uxml", "uss", "shader", "compute", "cginc", "hlsl", "glslinc", "template", "raytrace"
             };
         }
 
-        class CompilerOptions : SolutionGenerationTestBase
+        class CompilerOptions : ProjectGenerationTestBase
         {
             [Test]
             public void AllowUnsafeFromResponseFile_AddBlockToCsproj()
@@ -463,7 +499,7 @@ namespace VSCodeEditor.Tests
             }
         }
 
-        class References : SolutionGenerationTestBase
+        class References : ProjectGenerationTestBase
         {
             [Test]
             public void DllInSourceFiles_WillBeAddedAsReference()
@@ -479,7 +515,7 @@ namespace VSCodeEditor.Tests
                 XmlDocument scriptProject = XMLUtilities.FromText(csprojFileContents);
                 XMLUtilities.AssertCompileItemsMatchExactly(scriptProject, new[] { "file.cs" });
                 XMLUtilities.AssertNonCompileItemsMatchExactly(scriptProject, new string[0]);
-                Assert.IsTrue(csprojFileContents.MatchesRegex($"<Reference Include=\"reference\">\\W*<HintPath>{SynchronizerBuilder.projectDirectory}/{referenceDll}\\W*</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"reference\">\\W*<HintPath>{SynchronizerBuilder.projectDirectory}/{referenceDll}\\W*</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -487,13 +523,13 @@ namespace VSCodeEditor.Tests
             {
                 const string responseFile = "csc.rsp";
                 var synchronizer = m_Builder
-                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "/Folder/Path With Space/Goodbye.dll" })
+                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "Folder/Path With Space/Goodbye.dll" })
                     .Build();
 
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Goodbye\">\\W*<HintPath>/Folder/Path With Space/Goodbye.dll\\W*</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"Goodbye\">\\W*<HintPath>{SynchronizerBuilder.projectDirectory}/Folder/Path With Space/Goodbye.dll\\W*</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -507,7 +543,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex($@"<ProjectReference Include=""{assembly.name}\.csproj\"">"));
+                Assert.That(csprojFileContents, Does.Match($@"<ProjectReference Include=""{assembly.name}\.csproj"">[\S\s]*?</ProjectReference>"));
             }
 
             [Test]
@@ -515,15 +551,15 @@ namespace VSCodeEditor.Tests
             {
                 const string responseFile = "csc.rsp";
                 var synchronizer = m_Builder
-                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "//MyPlugin.dll", "//Hello.dll" })
+                    .WithResponseFileData(m_Builder.Assembly, responseFile, fullPathReferences: new[] { "MyPlugin.dll", "Hello.dll" })
                     .Build();
 
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
 
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Hello\">\\W*<HintPath>//Hello.dll</HintPath>\\W*</Reference>"));
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"MyPlugin\">\\W*<HintPath>//MyPlugin.dll</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""Hello"">\W*<HintPath>{SynchronizerBuilder.projectDirectory}/Hello\.dll</HintPath>\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""MyPlugin"">\W*<HintPath>{SynchronizerBuilder.projectDirectory}/MyPlugin\.dll</HintPath>\W*</Reference>"));
             }
 
             [Test]
@@ -540,8 +576,8 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex($"<ProjectReference Include=\"{assemblyReferences[0].name}\\.csproj\">\\s+.+\\s+<Name>{assemblyReferences[0].name}</Name>\\W*</ProjectReference>"));
-                Assert.IsTrue(csprojFileContents.MatchesRegex($"<ProjectReference Include=\"{assemblyReferences[1].name}\\.csproj\">\\s+.+\\s+<Name>{assemblyReferences[1].name}</Name>\\W*</ProjectReference>"));
+                Assert.That(csprojFileContents, Does.Match($@"<ProjectReference Include=""{assemblyReferences[0].name}\.csproj"">[\S\s]*?</ProjectReference>"));
+                Assert.That(csprojFileContents, Does.Match($@"<ProjectReference Include=""{assemblyReferences[1].name}\.csproj"">[\S\s]*?</ProjectReference>"));
             }
 
             [Test]
@@ -557,8 +593,8 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"Hello\">\\W*<HintPath>/some/other/path/Hello.dll</HintPath>\\W*</Reference>"));
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<Reference Include=\"MyPlugin\">\\W*<HintPath>/some/path/MyPlugin.dll</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match("<Reference Include=\"Hello\">\\W*<HintPath>/some/other/path/Hello.dll</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match("<Reference Include=\"MyPlugin\">\\W*<HintPath>/some/path/MyPlugin.dll</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -570,7 +606,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsFalse(csprojFileContents.MatchesRegex($"<Reference Include=\"{projectAssembly.name}\">\\W*<HintPath>{projectAssembly.outputPath}</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Not.Match($"<Reference Include=\"{projectAssembly.name}\">\\W*<HintPath>{projectAssembly.outputPath}</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -587,7 +623,7 @@ namespace VSCodeEditor.Tests
             }
         }
 
-        class Defines : SolutionGenerationTestBase
+        class Defines : ProjectGenerationTestBase
         {
             [Test]
             public void ResponseFiles_CanAddDefines()
@@ -600,8 +636,8 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<DefineConstants>.*;DEF1.*</DefineConstants>"));
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<DefineConstants>.*;DEF2.*</DefineConstants>"));
+                Assert.That(csprojFileContents, Does.Match("<DefineConstants>.*;DEF1.*</DefineConstants>"));
+                Assert.That(csprojFileContents, Does.Match("<DefineConstants>.*;DEF2.*</DefineConstants>"));
             }
 
             [Test]
@@ -612,8 +648,8 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<DefineConstants>.*;DEF1.*</DefineConstants>"));
-                Assert.IsTrue(csprojFileContents.MatchesRegex("<DefineConstants>.*;DEF2.*</DefineConstants>"));
+                Assert.That(csprojFileContents, Does.Match("<DefineConstants>.*;DEF1.*</DefineConstants>"));
+                Assert.That(csprojFileContents, Does.Match("<DefineConstants>.*;DEF2.*</DefineConstants>"));
             }
 
             [Test]
@@ -632,10 +668,10 @@ namespace VSCodeEditor.Tests
 
                 var aCsprojContent = m_Builder.ReadProjectFile(assemblyA);
                 var bCsprojContent = m_Builder.ReadProjectFile(assemblyB);
-                Assert.IsTrue(bCsprojContent.MatchesRegex("<DefineConstants>.*;CHILD_DEFINE.*</DefineConstants>"));
-                Assert.IsFalse(bCsprojContent.MatchesRegex("<DefineConstants>.*;RootedDefine.*</DefineConstants>"));
-                Assert.IsFalse(aCsprojContent.MatchesRegex("<DefineConstants>.*;CHILD_DEFINE.*</DefineConstants>"));
-                Assert.IsTrue(aCsprojContent.MatchesRegex("<DefineConstants>.*;RootedDefine.*</DefineConstants>"));
+                Assert.That(bCsprojContent, Does.Match("<DefineConstants>.*;CHILD_DEFINE.*</DefineConstants>"));
+                Assert.That(bCsprojContent, Does.Not.Match("<DefineConstants>.*;RootedDefine.*</DefineConstants>"));
+                Assert.That(aCsprojContent, Does.Not.Match("<DefineConstants>.*;CHILD_DEFINE.*</DefineConstants>"));
+                Assert.That(aCsprojContent, Does.Match("<DefineConstants>.*;RootedDefine.*</DefineConstants>"));
             }
         }
     }

@@ -3,7 +3,7 @@ using Unity.CodeEditor;
 
 namespace VSCodeEditor.Tests
 {
-    class SolutionGenerationTestBase
+    class ProjectGenerationTestBase
     {
         string m_EditorPath;
         protected SynchronizerBuilder m_Builder;

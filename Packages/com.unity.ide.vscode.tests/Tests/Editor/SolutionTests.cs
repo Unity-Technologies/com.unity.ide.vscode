@@ -7,7 +7,7 @@ namespace VSCodeEditor.Tests
 {
     namespace SolutionGeneration
     {
-        class Synchronization : SolutionGenerationTestBase
+        class Synchronization : ProjectGenerationTestBase
         {
             [Test]
             public void EmptyProject_WhenSynced_ShouldNotGenerateSolutionFile()
@@ -170,7 +170,7 @@ namespace VSCodeEditor.Tests
             };
         }
 
-        class Format : SolutionGenerationTestBase
+        class Format : ProjectGenerationTestBase
         {
             [Test]
             public void SyncSettings_WhenSynced_HeaderMatchesVSVersion()
