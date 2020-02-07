@@ -5,10 +5,8 @@ using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Compilation;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -20,6 +18,7 @@ namespace VSCodeEditor
         void Sync();
         string SolutionFile();
         string ProjectDirectory { get; }
+        IAssemblyNameProvider AssemblyNameProvider { get; }
         void GenerateAll(bool generateAll);
         bool SolutionExists();
     }
@@ -118,11 +117,11 @@ namespace VSCodeEditor
 
         string[] m_ProjectSupportedExtensions = new string[0];
         public string ProjectDirectory { get; }
-        bool m_ShouldGenerateAll;
+        IAssemblyNameProvider IGenerator.AssemblyNameProvider => m_AssemblyNameProvider;
 
+        [Obsolete("Use AssemblyNameProvider.ToggleProjectGeneration(ProjectGenerationFlag)", true)]
         public void GenerateAll(bool generateAll)
         {
-            m_ShouldGenerateAll = generateAll;
         }
 
         readonly string m_ProjectName;
@@ -216,7 +215,7 @@ namespace VSCodeEditor
 
         void SetupProjectSupportedExtensions()
         {
-            m_ProjectSupportedExtensions = EditorSettings.projectGenerationUserExtensions;
+            m_ProjectSupportedExtensions = m_AssemblyNameProvider.ProjectSupportedExtensions;
         }
 
         bool ShouldFileBePartOfSolution(string file)
@@ -224,7 +223,7 @@ namespace VSCodeEditor
             string extension = Path.GetExtension(file);
 
             // Exclude files coming from packages except if they are internalized.
-            if (!m_ShouldGenerateAll && IsInternalizedPackagePath(file))
+            if (m_AssemblyNameProvider.IsInternalizedPackagePath(file))
             {
                 return false;
             }
@@ -326,7 +325,7 @@ namespace VSCodeEditor
             {
                 // Exclude files coming from packages except if they are internalized.
                 // TODO: We need assets from the assembly API
-                if (!m_ShouldGenerateAll && IsInternalizedPackagePath(asset))
+                if (m_AssemblyNameProvider.IsInternalizedPackagePath(asset))
                 {
                     continue;
                 }
@@ -360,23 +359,6 @@ namespace VSCodeEditor
                 result[entry.Key] = entry.Value.ToString();
 
             return result;
-        }
-
-        bool IsInternalizedPackagePath(string file)
-        {
-            if (string.IsNullOrWhiteSpace(file))
-            {
-                return false;
-            }
-
-            var packageInfo = m_AssemblyNameProvider.FindForAssetPath(file);
-            if (packageInfo == null)
-            {
-                return false;
-            }
-
-            var packageSource = packageInfo.source;
-            return packageSource != PackageSource.Embedded && packageSource != PackageSource.Local;
         }
 
         void SyncProject(
