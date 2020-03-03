@@ -433,7 +433,16 @@ namespace VSCodeEditor
                 projectBuilder.Append(additionalAssetsForProject);
 
             var responseRefs = responseFilesData.SelectMany(x => x.FullPathReferences.Select(r => r));
-            foreach (var reference in assembly.compiledAssemblyReferences.Union(responseRefs).Union(references).Except(roslynAnalyzerDllPaths))
+            var internalAssemblyReferences = assembly.assemblyReferences
+              .Where(i => !i.sourceFiles.Any(ShouldFileBePartOfSolution)).Select(i => i.outputPath);
+            var allReferences =
+              assembly.compiledAssemblyReferences
+                .Union(responseRefs)
+                .Union(references)
+                .Union(internalAssemblyReferences)
+                .Except(roslynAnalyzerDllPaths);
+
+            foreach (var reference in allReferences)
             {
                 string fullReference = Path.IsPathRooted(reference) ? reference : Path.Combine(ProjectDirectory, reference);
                 AppendReference(fullReference, projectBuilder);
