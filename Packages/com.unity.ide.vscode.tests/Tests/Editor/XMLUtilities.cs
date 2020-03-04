@@ -9,13 +9,20 @@ namespace VSCodeEditor.Tests
     {
         public static void AssertCompileItemsMatchExactly(XmlDocument projectXml, IEnumerable<string> expectedCompileItems)
         {
-            var compileItems = projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:Compile/@Include").ToArray();
+            var compileItems = projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:Compile/@Include", GetModifiedXmlNamespaceManager(projectXml)).ToArray();
             CollectionAssert.AreEquivalent(RelativeAssetPathsFor(expectedCompileItems), compileItems);
+        }
+        
+        public static void AssertAnalyzerItemsMatchExactly(XmlDocument projectXml, IEnumerable<string> expectedAnalyzers)
+        {
+            CollectionAssert.AreEquivalent(
+                expected: RelativeAssetPathsFor(expectedAnalyzers), 
+                actual:projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:Analyzer/@Include", GetModifiedXmlNamespaceManager(projectXml)).ToArray());
         }
 
         public static void AssertNonCompileItemsMatchExactly(XmlDocument projectXml, IEnumerable<string> expectedNoncompileItems)
         {
-            var nonCompileItems = projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:None/@Include").ToArray();
+            var nonCompileItems = projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:None/@Include", GetModifiedXmlNamespaceManager(projectXml)).ToArray();
             CollectionAssert.AreEquivalent(RelativeAssetPathsFor(expectedNoncompileItems), nonCompileItems);
         }
 
@@ -31,9 +38,9 @@ namespace VSCodeEditor.Tests
             return fileNames.Select(fileName => fileName.Replace('/', '\\')).ToArray();
         }
 
-        static IEnumerable<string> SelectAttributeValues(this XmlDocument xmlDocument, string xpathQuery)
+        static IEnumerable<string> SelectAttributeValues(this XmlDocument xmlDocument, string xpathQuery, XmlNamespaceManager xmlNamespaceManager)
         {
-            var result = xmlDocument.SelectNodes(xpathQuery, GetModifiedXmlNamespaceManager(xmlDocument));
+            var result = xmlDocument.SelectNodes(xpathQuery, xmlNamespaceManager);
             foreach (XmlAttribute attribute in result)
                 yield return attribute.Value;
         }

@@ -12,7 +12,6 @@ namespace VSCodeEditor
     public class VSCodeScriptEditor : IExternalCodeEditor
     {
         const string vscode_argument = "vscode_arguments";
-        const string vscode_generate_all = "unity_generate_all_csproj";
         const string vscode_extension = "vscode_userExtensions";
         static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent("Reset argument");
         string m_Arguments;
@@ -113,17 +112,41 @@ namespace VSCodeEditor
                 Arguments = DefaultArgument;
             }
 
-            var prevGenerate = EditorPrefs.GetBool(vscode_generate_all, false);
-
-            var generateAll = EditorGUILayout.Toggle("Generate all .csproj files.", prevGenerate);
-            if (generateAll != prevGenerate)
-            {
-                EditorPrefs.SetBool(vscode_generate_all, generateAll);
-            }
-
-            m_ProjectGeneration.GenerateAll(generateAll);
+            EditorGUILayout.LabelField("Generate .csproj files for:");
+            EditorGUI.indentLevel++;
+            SettingsButton(ProjectGenerationFlag.Embedded, "Embedded packages", "");
+            SettingsButton(ProjectGenerationFlag.Local, "Local packages", "");
+            SettingsButton(ProjectGenerationFlag.Registry, "Registry packages", "");
+            SettingsButton(ProjectGenerationFlag.Git, "Git packages", "");
+            SettingsButton(ProjectGenerationFlag.BuiltIn, "Built-in packages", "");
+#if UNITY_2019_3_OR_NEWER
+            SettingsButton(ProjectGenerationFlag.LocalTarBall, "Local tarball", "");
+#endif
+            SettingsButton(ProjectGenerationFlag.Unknown, "Packages from unknown sources", "");
+            RegenerateProjectFiles();
+            EditorGUI.indentLevel--;
 
             HandledExtensionsString = EditorGUILayout.TextField(new GUIContent("Extensions handled: "), HandledExtensionsString);
+        }
+
+        void RegenerateProjectFiles()
+        {
+            var rect = EditorGUI.IndentedRect(EditorGUILayout.GetControlRect(new GUILayoutOption[] { }));
+            rect.width = 252;
+            if (GUI.Button(rect, "Regenerate project files"))
+            {
+                m_ProjectGeneration.Sync();
+            }
+        }
+
+        void SettingsButton(ProjectGenerationFlag preference, string guiMessage, string toolTip)
+        {
+            var prevValue = m_ProjectGeneration.AssemblyNameProvider.ProjectGenerationFlag.HasFlag(preference);
+            var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
+            if (newValue != prevValue)
+            {
+                m_ProjectGeneration.AssemblyNameProvider.ToggleProjectGeneration(preference);
+            }
         }
 
         public void CreateIfDoesntExist()
@@ -147,7 +170,7 @@ namespace VSCodeEditor
 
         public bool OpenProject(string path, int line, int column)
         {
-            if (path != "" && !SupportsExtension(path)) // Assets - Open C# Project passes empty path here
+            if (path != "" && (!SupportsExtension(path) || !File.Exists(path))) // Assets - Open C# Project passes empty path here
             {
                 return false;
             }

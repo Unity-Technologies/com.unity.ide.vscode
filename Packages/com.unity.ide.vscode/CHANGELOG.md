@@ -1,5 +1,14 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.2.0] - 2020-03-04
+
+Do not reference projects that has not been generated (case 1211057)
+Only open files that exists (case 1188394)
+Add individual toggle buttons for generating csprojects for packages
+Add support for Roslyn analyzers in project generation through csc.rsp and compiled assembly references
+Remove Release build target from csproj and sln
+
+
 ## [1.1.4] - 2020-01-02
 
 Delta project generation, only recompute the csproj files whose script modified.

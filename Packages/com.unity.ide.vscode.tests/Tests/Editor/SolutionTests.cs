@@ -7,7 +7,7 @@ namespace VSCodeEditor.Tests
 {
     namespace SolutionGeneration
     {
-        class Synchronization : SolutionGenerationTestBase
+        class Synchronization : ProjectGenerationTestBase
         {
             [Test]
             public void EmptyProject_WhenSynced_ShouldNotGenerateSolutionFile()
@@ -115,6 +115,43 @@ namespace VSCodeEditor.Tests
                 Assert.IsFalse(synchronizer.SyncIfNeeded(new List<string> { " reimport.random" }, new string[0]));
             }
 
+            [Test]
+            public void AssetNotBelongingToAssembly_WillSync_ButWontWriteFiles()
+            {
+                var synchronizer = m_Builder.Build();
+                
+                synchronizer.Sync(); // Generate solution and csproj
+
+                Assert.AreEqual(3, m_Builder.WriteTimes, "Should have written csproj, sln, and vscode setting files");
+
+                m_Builder.WithAssetFiles(new[] { "X.cs" });
+
+                var res = synchronizer.SyncIfNeeded(new List<string> { "X.cs" }, new string[0]);
+
+                Assert.IsTrue(res, "Should support file extension");
+
+                Assert.AreEqual(3, m_Builder.WriteTimes, "Should not have rewritten neither csproj, sln, nor vscode setting files");
+            }
+
+            [Test]
+            public void AssetBelongingToAssemblyWithNoName_WillSync_ButWontWriteFiles()
+            {
+                var synchronizer = m_Builder.Build();
+                
+                synchronizer.Sync(); // Generate solution and csproj
+
+                Assert.AreEqual(3, m_Builder.WriteTimes, "Should have written csproj, sln, and vscode setting files");
+
+                string[] files = new[] { "X.cs" };
+                m_Builder.WithAssetFiles(files).AssignFilesToAssembly(files, new Assembly("", "", files, new string[0], new Assembly[0], new string[0], AssemblyFlags.EditorAssembly));
+
+                var res = synchronizer.SyncIfNeeded(new List<string> { "X.cs" }, new string[0]);
+
+                Assert.IsTrue(res, "Should support file extension");
+
+                Assert.AreEqual(3, m_Builder.WriteTimes, "Should not have rewritten neither csproj, sln, nor vscode setting files");
+            }
+
             [Test, TestCaseSource(nameof(s_ExtensionsRequireReSync))]
             public void AfterSync_WillResync_WhenAffectedFileTypes(string fileExtension)
             {
@@ -133,7 +170,7 @@ namespace VSCodeEditor.Tests
             };
         }
 
-        class Format : SolutionGenerationTestBase
+        class Format : ProjectGenerationTestBase
         {
             [Test]
             public void SyncSettings_WhenSynced_HeaderMatchesVSVersion()
@@ -170,13 +207,10 @@ namespace VSCodeEditor.Tests
                     @"Global",
                     @"    GlobalSection(SolutionConfigurationPlatforms) = preSolution",
                     @"        Debug|Any CPU = Debug|Any CPU",
-                    @"        Release|Any CPU = Release|Any CPU",
                     @"    EndGlobalSection",
                     @"    GlobalSection(ProjectConfigurationPlatforms) = postSolution",
                     @"        {{{1}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU",
                     @"        {{{1}}}.Debug|Any CPU.Build.0 = Debug|Any CPU",
-                    @"        {{{1}}}.Release|Any CPU.ActiveCfg = Release|Any CPU",
-                    @"        {{{1}}}.Release|Any CPU.Build.0 = Release|Any CPU",
                     @"    EndGlobalSection",
                     @"    GlobalSection(SolutionProperties) = preSolution",
                     @"        HideSolutionNode = FALSE",
