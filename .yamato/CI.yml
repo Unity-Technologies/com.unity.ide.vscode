@@ -3,6 +3,7 @@ test_suite_name: VisualStudioCode
 editors:
   - version: 2019.2
   - version: 2019.3
+  - version: 2020.1
   - version: trunk
 platforms:
   - name: win
