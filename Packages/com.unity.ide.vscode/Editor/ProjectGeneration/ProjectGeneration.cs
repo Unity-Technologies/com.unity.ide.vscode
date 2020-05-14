@@ -230,13 +230,18 @@ namespace VSCodeEditor
 
         bool ShouldFileBePartOfSolution(string file)
         {
-            string extension = Path.GetExtension(file);
-
             // Exclude files coming from packages except if they are internalized.
             if (m_AssemblyNameProvider.IsInternalizedPackagePath(file))
             {
                 return false;
             }
+
+            return HasValidExtension(file);
+        }
+
+        bool HasValidExtension(string file)
+        {
+            string extension = Path.GetExtension(file);
 
             // Dll's are not scripts but still need to be included..
             if (extension == ".dll")
@@ -423,7 +428,7 @@ namespace VSCodeEditor
 
             foreach (string file in assembly.sourceFiles)
             {
-                if (!ShouldFileBePartOfSolution(file))
+                if (!HasValidExtension(file))
                     continue;
 
                 var extension = Path.GetExtension(file).ToLower();
