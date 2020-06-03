@@ -37,7 +37,7 @@ namespace com.unity.ide.vscode
             "{2}\r\n" +
             "Global\r\n" +
             "\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\r\n" +
-            "\t\tUnity|Any CPU = Unity|Any CPU\r\n" +
+            "\t\tDebug|Any CPU = Debug|Any CPU\r\n" +
             "\tEndGlobalSection\r\n" +
             "\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\r\n" +
             "{3}\r\n" +
@@ -60,8 +60,6 @@ namespace com.unity.ide.vscode
             "</Project>\r\n";
 
         const string k_MSBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
-
-        const string k_WindowsNewline = "\r\n";
 
         const string k_SettingsJson = @"{
     ""files.exclude"":
@@ -530,9 +528,7 @@ namespace com.unity.ide.vscode
         {
             var otherArguments = GetOtherArgumentsFromResponseFilesData(responseFilesData);
             bool allowUnsafe = assembly.compilerOptions.AllowUnsafeCode;
-            var defines = new HashSet<string>(StringComparer.Ordinal);
-            defines.Add("DEBUG");
-            defines.Add("TRACE");
+            var defines = new HashSet<string>(StringComparer.Ordinal) {"DEBUG", "TRACE"};
             foreach (var def in assembly.defines)
                 defines.Add(def);
             foreach (var rfd in responseFilesData)
@@ -541,17 +537,59 @@ namespace com.unity.ide.vscode
                 foreach (var def in rfd.Defines)
                     defines.Add(def);
             }
-            GetProjectHeaderTemplate(
-                builder,
-                ProjectGuid(assembly.name),
-                assembly.name,
-                defines,
-                assembly.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe),
-                GenerateAnalyserItemGroup(otherArguments["analyzer"].Concat(otherArguments["a"])
-                    .SelectMany(x => x.Split(';'))
-                    .Concat(roslynAnalyzerDllPaths)
-                    .Distinct()
-                    .ToArray()));
+
+            sb.Append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n");
+            sb.Append("<Project ToolsVersion=\"" + k_ToolsVersion + "\" DefaultTargets=\"Build\" xmlns=\"" + k_MSBuildNamespaceUri + "\">\r\n");
+            sb.Append("  <PropertyGroup>\r\n");
+            sb.Append("    <LangVersion>" + k_TargetLanguageVersion + "</LangVersion>\r\n");
+            sb.Append("  </PropertyGroup>\r\n");
+            sb.Append("  <PropertyGroup>\r\n");
+            sb.Append("    <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>\r\n");
+            sb.Append("    <Platform Condition=\" '$(Platform)' == '' \">AnyCPU</Platform>\r\n");
+            sb.Append("    <ProductVersion>" + k_ProductVersion + "</ProductVersion>\r\n");
+            sb.Append("    <SchemaVersion>2.0</SchemaVersion>\r\n");
+            sb.Append("    <RootNamespace>").Append(EditorSettings.projectGenerationRootNamespace).Append("</RootNamespace>\r\n");
+            sb.Append("    <ProjectGuid>{").Append(ProjectGuid(assembly.name)).Append("}</ProjectGuid>\r\n");
+            sb.Append("    <OutputType>Library</OutputType>\r\n");
+            sb.Append("    <AppDesignerFolder>Properties</AppDesignerFolder>\r\n");
+            sb.Append("    <AssemblyName>").Append(assembly.name).Append("</AssemblyName>\r\n");
+            sb.Append("    <TargetFrameworkVersion>" + k_TargetFrameworkVersion + "</TargetFrameworkVersion>\r\n");
+            sb.Append("    <FileAlignment>512</FileAlignment>\r\n");
+            sb.Append("    <BaseDirectory>" + k_BaseDirectory + "</BaseDirectory>\r\n");
+            sb.Append("  </PropertyGroup>\r\n");
+            sb.Append("  <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' \">\r\n");
+            sb.Append("    <DebugSymbols>true</DebugSymbols>\r\n");
+            sb.Append("    <DebugType>full</DebugType>\r\n");
+            sb.Append("    <Optimize>false</Optimize>\r\n");
+            sb.Append("    <OutputPath>Temp\\bin\\Debug\\</OutputPath>\r\n");
+
+            sb.Append("    <DefineConstants>");
+            foreach (var def in defines)
+            {
+                sb.Append(def);
+                sb.Append(';');
+            }
+            sb.Length -= 1; // remove final ';' (we know there's always at least 2 defines)
+            sb.Append("</DefineConstants>\r\n");
+
+            sb.Append("    <ErrorReport>prompt</ErrorReport>\r\n");
+            sb.Append("    <WarningLevel>4</WarningLevel>\r\n");
+            sb.Append("    <NoWarn>0169</NoWarn>\r\n");
+            sb.Append("    <AllowUnsafeBlocks>").Append(allowUnsafe).Append("</AllowUnsafeBlocks>\r\n");
+            sb.Append("  </PropertyGroup>\r\n");
+            sb.Append("  <PropertyGroup>\r\n");
+            sb.Append("    <NoConfig>true</NoConfig>\r\n");
+            sb.Append("    <NoStdLib>true</NoStdLib>\r\n");
+            sb.Append("    <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>\r\n");
+            sb.Append("    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>\r\n");
+            sb.Append("    <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>\r\n");
+            sb.Append("  </PropertyGroup>\r\n");
+            sb.Append(GenerateAnalyserItemGroup(otherArguments["analyzer"].Concat(otherArguments["a"])
+                .SelectMany(x => x.Split(';'))
+                .Concat(roslynAnalyzerDllPaths)
+                .Distinct()
+                .ToArray()));
+            sb.Append("  <ItemGroup>\r\n");
         }
 
         private static ILookup<string, string> GetOtherArgumentsFromResponseFilesData(List<ResponseFileData> responseFilesData)
@@ -592,82 +630,13 @@ namespace com.unity.ide.vscode
                 return string.Empty;
 
             var analyserBuilder = new StringBuilder();
-            analyserBuilder.Append("  <ItemGroup>").Append(k_WindowsNewline);
+            analyserBuilder.Append("  <ItemGroup>\r\n");
             foreach (var path in paths)
             {
-                analyserBuilder.Append($"    <Analyzer Include=\"{path}\" />").Append(k_WindowsNewline);
+                analyserBuilder.Append($"    <Analyzer Include=\"{path}\" />\r\n");
             }
-            analyserBuilder.Append("  </ItemGroup>").Append(k_WindowsNewline);
+            analyserBuilder.Append("  </ItemGroup>\r\n");
             return analyserBuilder.ToString();
-        }
-
-        static string GetSolutionText()
-        {
-            return string.Join("\r\n", @"", @"Microsoft Visual Studio Solution File, Format Version {0}", @"# Visual Studio {1}", @"{2}", @"Global", @"    GlobalSection(SolutionConfigurationPlatforms) = preSolution", @"        Debug|Any CPU = Debug|Any CPU", @"    EndGlobalSection", @"    GlobalSection(ProjectConfigurationPlatforms) = postSolution", @"{3}", @"    EndGlobalSection", @"    GlobalSection(SolutionProperties) = preSolution", @"        HideSolutionNode = FALSE", @"    EndGlobalSection", @"EndGlobal", @"").Replace("    ", "\t");
-        }
-
-        static string GetProjectFooterTemplate()
-        {
-            return string.Join("\r\n", @"  </ItemGroup>", @"  <Import Project=""$(MSBuildToolsPath)\Microsoft.CSharp.targets"" />", @"  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.", @"       Other similar extension points exist, see Microsoft.Common.targets.", @"  <Target Name=""BeforeBuild"">", @"  </Target>", @"  <Target Name=""AfterBuild"">", @"  </Target>", @"  -->", @"</Project>", @"");
-        }
-
-        static void GetProjectHeaderTemplate(
-            StringBuilder sb,
-            string assemblyGUID,
-            string assemblyName,
-            string defines,
-            bool allowUnsafe,
-            string analyzerBlock
-        )
-        {
-            sb.Append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n");
-            sb.Append("<Project ToolsVersion=\"" + k_ToolsVersion + "\" DefaultTargets=\"Build\" xmlns=\"" + k_MSBuildNamespaceUri + "\">\r\n");
-            sb.Append("  <PropertyGroup>\r\n");
-            sb.Append("    <LangVersion>" + k_TargetLanguageVersion + "</LangVersion>\r\n");
-            sb.Append("  </PropertyGroup>\r\n");
-            sb.Append("  <PropertyGroup>\r\n");
-            sb.Append("    <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>\r\n");
-            sb.Append("    <Platform Condition=\" '$(Platform)' == '' \">AnyCPU</Platform>\r\n");
-            sb.Append("    <ProductVersion>" + k_ProductVersion + "</ProductVersion>\r\n");
-            sb.Append("    <SchemaVersion>2.0</SchemaVersion>\r\n");
-            sb.Append("    <RootNamespace>").Append(EditorSettings.projectGenerationRootNamespace).Append("</RootNamespace>\r\n");
-            sb.Append("    <ProjectGuid>{").Append(assemblyGUID).Append("}</ProjectGuid>\r\n");
-            sb.Append("    <OutputType>Library</OutputType>\r\n");
-            sb.Append("    <AppDesignerFolder>Properties</AppDesignerFolder>\r\n");
-            sb.Append("    <AssemblyName>").Append(assemblyName).Append("</AssemblyName>\r\n");
-            sb.Append("    <TargetFrameworkVersion>" + k_TargetFrameworkVersion + "</TargetFrameworkVersion>\r\n");
-            sb.Append("    <FileAlignment>512</FileAlignment>\r\n");
-            sb.Append("    <BaseDirectory>" + k_BaseDirectory + "</BaseDirectory>\r\n");
-            sb.Append("  </PropertyGroup>\r\n");
-            sb.Append("  <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' \">\r\n");
-            sb.Append("    <DebugSymbols>true</DebugSymbols>\r\n");
-            sb.Append("    <DebugType>full</DebugType>\r\n");
-            sb.Append("    <Optimize>false</Optimize>\r\n");
-            sb.Append("    <OutputPath>Temp\\bin\\Debug\\</OutputPath>\r\n");
-
-            sb.Append("    <DefineConstants>");
-            foreach (var def in defines)
-            {
-                sb.Append(def);
-                sb.Append(';');
-            }
-            sb.Length -= 1; // remove final ';' (we know there's always at least 2 defines)
-            sb.Append("</DefineConstants>\r\n");
-
-            sb.Append("    <ErrorReport>prompt</ErrorReport>\r\n");
-            sb.Append("    <WarningLevel>4</WarningLevel>\r\n");
-            sb.Append("    <NoWarn>0169</NoWarn>\r\n");
-            sb.Append("    <AllowUnsafeBlocks>").Append(allowUnsafe).Append("</AllowUnsafeBlocks>\r\n");
-            sb.Append("  </PropertyGroup>\r\n");
-            sb.Append("  <PropertyGroup>\r\n");
-            sb.Append("    <NoConfig>true</NoConfig>\r\n");
-            sb.Append("    <NoStdLib>true</NoStdLib>\r\n");
-            sb.Append("    <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>\r\n");
-            sb.Append("    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>\r\n");
-            sb.Append("    <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>\r\n");
-            sb.Append("  </PropertyGroup>\r\n");
-            sb.Append(analyzerBlock).Append("\r\n");
-            sb.Append("  <ItemGroup>\r\n");
         }
 
         void SyncSolution(IEnumerable<Assembly> assemblies)
@@ -682,7 +651,7 @@ namespace com.unity.ide.vscode
 
             var relevantAssemblies = RelevantAssembliesForMode(assemblies);
             string projectEntries = GetProjectEntries(relevantAssemblies);
-            string projectConfigurations = string.Join(k_WindowsNewline, relevantAssemblies.Select(i => GetProjectActiveConfigurations(ProjectGuid(i.name))).ToArray());
+            string projectConfigurations = string.Join("\r\n", relevantAssemblies.Select(i => GetProjectActiveConfigurations(ProjectGuid(i.name))).ToArray());
             return string.Format(k_SolutionFileFormat, fileversion, vsversion, projectEntries, projectConfigurations);
         }
 
@@ -705,7 +674,7 @@ namespace com.unity.ide.vscode
                 ProjectGuid(i.name)
             ));
 
-            return string.Join(k_WindowsNewline, projectEntries.ToArray());
+            return string.Join("\r\n", projectEntries.ToArray());
         }
 
         /// <summary>

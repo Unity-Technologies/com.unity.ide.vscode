@@ -65,7 +65,7 @@ namespace com.unity.ide.vscode.tests
                 synchronizer.Sync();
 
                 var csprojContent = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                var defines = string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Concat(m_Builder.Assembly.defines).Distinct().ToArray());
+                var defines = string.Join(";", new[] { "DEBUG", "TRACE" }.Distinct().ToArray());
                 var content = new[]
                 {
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>",

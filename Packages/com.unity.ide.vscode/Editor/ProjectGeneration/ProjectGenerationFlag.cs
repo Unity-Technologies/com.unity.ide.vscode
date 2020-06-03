@@ -1,6 +1,6 @@
 using System;
 
-namespace VSCodeEditor
+namespace com.unity.ide.vscode
 {
     [Flags]
     public enum ProjectGenerationFlag

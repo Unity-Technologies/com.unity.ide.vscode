@@ -210,7 +210,6 @@ namespace com.unity.ide.vscode.tests
                     @"    EndGlobalSection",
                     @"    GlobalSection(ProjectConfigurationPlatforms) = postSolution",
                     @"        {{{1}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU",
-                    @"        {{{1}}}.Debug|Any CPU.Build.0 = Debug|Any CPU",
                     @"    EndGlobalSection",
                     @"    GlobalSection(SolutionProperties) = preSolution",
                     @"        HideSolutionNode = FALSE",
