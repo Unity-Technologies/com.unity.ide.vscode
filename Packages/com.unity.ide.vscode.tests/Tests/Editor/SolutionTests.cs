@@ -16,7 +16,9 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
 
-                Assert.False(m_Builder.ReadFile(synchronizer.SolutionFile()).Contains("Project(\"{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}\")"), "Should not create project entry with no assemblies.");
+                Assert.False(
+                    m_Builder.ReadFile(synchronizer.SolutionFile()).Contains("Project(\"{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}\")"),
+                    "Should not create project entry with no assemblies.");
             }
 
             [Test]
@@ -39,7 +41,9 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
                 m_Builder.DeleteFile(synchronizer.SolutionFile());
 
-                Assert.False(synchronizer.SolutionExists(), "Synchronizer should sync state with file system, after file has been deleted.");
+                Assert.False(
+                    synchronizer.SolutionExists(),
+                    "Synchronizer should sync state with file system, after file has been deleted.");
             }
 
             [Test]
@@ -51,7 +55,10 @@ namespace VSCodeEditor.Tests
                 Assert.AreEqual(3, m_Builder.WriteTimes); // Once for csproj, once for solution, and once for vscode settings
 
                 synchronizer.Sync();
-                Assert.AreEqual(3, m_Builder.WriteTimes, "When content doesn't change we shouldn't re-sync");
+                Assert.AreEqual(
+                    5,
+                    m_Builder.WriteTimes,
+                    "Solution file is not rewritten (but csproj and vscode settings are)");
             }
 
             [Test]
@@ -79,7 +86,10 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
 
-                Assert.AreNotEqual(solutionText, m_Builder.ReadFile(synchronizer.SolutionFile()), "Should rewrite solution text");
+                Assert.AreNotEqual(
+                    solutionText,
+                    m_Builder.ReadFile(synchronizer.SolutionFile()),
+                    "Should rewrite solution text");
             }
 
             [TestCase("dll")]
@@ -88,11 +98,13 @@ namespace VSCodeEditor.Tests
             {
                 var synchronizer = m_Builder.Build();
 
-                Assert.IsFalse(synchronizer.SyncIfNeeded(new List<string>(), new[] { $"reimport.{reimportedFile}" }), "Before sync has been called, we should not allow SyncIfNeeded");
+                Assert.IsFalse(
+                    synchronizer.SyncIfNeeded(new List<string>(), new[] {$"reimport.{reimportedFile}"}),
+                    "Before sync has been called, we should not allow SyncIfNeeded");
 
                 synchronizer.Sync();
 
-                Assert.IsTrue(synchronizer.SyncIfNeeded(new List<string>(), new[] { $"reimport.{reimportedFile}" }));
+                Assert.That(synchronizer.SyncIfNeeded(new List<string>(), new[] {$"reimport.{reimportedFile}"}));
             }
 
             [Test]
@@ -102,54 +114,92 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
 
-                Assert.IsFalse(synchronizer.SyncIfNeeded(new List<string>(), new[] { "ShouldNotSync.txt" }));
+                Assert.IsFalse(synchronizer.SyncIfNeeded(new List<string>(), new[] {"ShouldNotSync.txt"}));
             }
 
             [Test]
-            public void AfterSync_WontReimport_WithoutSpeciifcAffectedFileExtension()
+            public void AfterSync_WontReimport_WithoutSpecificAffectedFileExtension()
             {
                 var synchronizer = m_Builder.Build();
 
                 synchronizer.Sync();
 
-                Assert.IsFalse(synchronizer.SyncIfNeeded(new List<string> { " reimport.random" }, new string[0]));
+                Assert.IsFalse(synchronizer.SyncIfNeeded(new List<string> {" reimport.random"}, new string[0]));
+            }
+
+            [Test]
+            public void AfterSync_WillReimportSolutionFile_WhenNewAssemblyIsBeingAdded()
+            {
+                var synchronizer = m_Builder.Build();
+
+                synchronizer.Sync();
+
+                var newAssembly = new Assembly(
+                    "MyAssembly",
+                    "myOutput/path",
+                    new[] {"MyFile.cs"},
+                    new string[0],
+                    new Assembly[0],
+                    new string[0],
+                    AssemblyFlags.None);
+                var newAssemblies = new[] {m_Builder.Assembly, newAssembly};
+                m_Builder.WithAssemblies(newAssemblies);
+                m_Builder.AssignFilesToAssembly(new[] {"MyFile.cs"}, newAssembly);
+
+                synchronizer.SyncIfNeeded(new List<string> {"MyFile.cs"}, new string[0]);
+
+                var solutionFileContent = m_Builder.ReadFile(synchronizer.SolutionFile());
+                StringAssert.Contains(
+                    "Project(\"{}\") = \"MyAssembly\", \"MyAssembly.csproj\"",
+                    solutionFileContent,
+                    "After synchronizing a new file from a new Assembly. The new assembly should be added to solution file.");
             }
 
             [Test]
             public void AssetNotBelongingToAssembly_WillSync_ButWontWriteFiles()
             {
                 var synchronizer = m_Builder.Build();
-                
+
                 synchronizer.Sync(); // Generate solution and csproj
 
                 Assert.AreEqual(3, m_Builder.WriteTimes, "Should have written csproj, sln, and vscode setting files");
 
-                m_Builder.WithAssetFiles(new[] { "X.cs" });
+                m_Builder.WithAssetFiles(new[] {"X.cs"});
 
-                var res = synchronizer.SyncIfNeeded(new List<string> { "X.cs" }, new string[0]);
+                var res = synchronizer.SyncIfNeeded(new List<string> {"X.cs"}, new string[0]);
 
                 Assert.IsTrue(res, "Should support file extension");
 
-                Assert.AreEqual(3, m_Builder.WriteTimes, "Should not have rewritten neither csproj, sln, nor vscode setting files");
+                Assert.AreEqual(
+                    4,
+                    m_Builder.WriteTimes,
+                    "Should only rewrite sln file");
             }
 
             [Test]
             public void AssetBelongingToAssemblyWithNoName_WillSync_ButWontWriteFiles()
             {
                 var synchronizer = m_Builder.Build();
-                
+
                 synchronizer.Sync(); // Generate solution and csproj
 
                 Assert.AreEqual(3, m_Builder.WriteTimes, "Should have written csproj, sln, and vscode setting files");
 
-                string[] files = new[] { "X.cs" };
-                m_Builder.WithAssetFiles(files).AssignFilesToAssembly(files, new Assembly("", "", files, new string[0], new Assembly[0], new string[0], AssemblyFlags.EditorAssembly));
+                string[] files = {"X.cs"};
+                m_Builder
+                    .WithAssetFiles(files)
+                    .AssignFilesToAssembly(
+                        files,
+                        new Assembly("", "", files, new string[0], new Assembly[0], new string[0], AssemblyFlags.EditorAssembly));
 
-                var res = synchronizer.SyncIfNeeded(new List<string> { "X.cs" }, new string[0]);
+                var res = synchronizer.SyncIfNeeded(new List<string> {"X.cs"}, new string[0]);
 
                 Assert.IsTrue(res, "Should support file extension");
 
-                Assert.AreEqual(3, m_Builder.WriteTimes, "Should not have rewritten neither csproj, sln, nor vscode setting files");
+                Assert.AreEqual(
+                    4,
+                    m_Builder.WriteTimes,
+                    "Should only rewrite sln file");
             }
 
             [Test, TestCaseSource(nameof(s_ExtensionsRequireReSync))]
@@ -157,16 +207,19 @@ namespace VSCodeEditor.Tests
             {
                 var synchronizer = m_Builder.Build();
 
-                Assert.IsFalse(synchronizer.SyncIfNeeded(new List<string> { $"reimport.{fileExtension}" }, new string[0]), "Before sync has been called, we should not allow SyncIfNeeded");
+                Assert.IsFalse(
+                    synchronizer.SyncIfNeeded(new List<string> {$"reimport.{fileExtension}"}, new string[0]),
+                    "Before sync has been called, we should not allow SyncIfNeeded");
 
                 synchronizer.Sync();
 
-                Assert.IsTrue(synchronizer.SyncIfNeeded(new List<string> { $"reimport.{fileExtension}" }, new string[0]));
+                Assert.That(synchronizer.SyncIfNeeded(new List<string> {$"reimport.{fileExtension}"}, new string[0]));
             }
 
             static string[] s_ExtensionsRequireReSync =
             {
-                "dll", "asmdef", "cs", "uxml", "uss", "shader", "compute", "cginc", "hlsl", "glslinc", "template", "raytrace"
+                "dll", "asmdef", "cs", "uxml", "uss", "shader", "compute", "cginc", "hlsl", "glslinc", "template",
+                "raytrace"
             };
         }
 
@@ -179,8 +232,8 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
 
-                string[] syncedSolutionText = m_Builder.ReadFile(synchronizer.SolutionFile()).Split(new[] { "\r\n" }, StringSplitOptions.None);
-                Assert.IsTrue(syncedSolutionText.Length >= 4);
+                string[] syncedSolutionText = m_Builder.ReadFile(synchronizer.SolutionFile()).Split(new[] {"\r\n"}, StringSplitOptions.None);
+                Assert.That(syncedSolutionText.Length, Is.GreaterThanOrEqualTo(4));
                 Assert.AreEqual("", syncedSolutionText[0]);
                 Assert.AreEqual("Microsoft Visual Studio Solution File, Format Version 11.00", syncedSolutionText[1]);
                 Assert.AreEqual("# Visual Studio 2010", syncedSolutionText[2]);
