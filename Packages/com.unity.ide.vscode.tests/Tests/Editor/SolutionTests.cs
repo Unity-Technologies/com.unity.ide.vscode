@@ -56,9 +56,9 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
                 Assert.AreEqual(
-                    5,
+                    3,
                     m_Builder.WriteTimes,
-                    "Solution file is not rewritten (but csproj and vscode settings are)");
+                    "When content doesn't change we shouldn't re-sync");
             }
 
             [Test]
@@ -171,9 +171,9 @@ namespace VSCodeEditor.Tests
                 Assert.IsTrue(res, "Should support file extension");
 
                 Assert.AreEqual(
-                    4,
+                    3,
                     m_Builder.WriteTimes,
-                    "Should only rewrite sln file");
+                    "Should not have rewritten neither csproj, sln, nor vscode setting files");
             }
 
             [Test]
@@ -197,7 +197,7 @@ namespace VSCodeEditor.Tests
                 Assert.IsTrue(res, "Should support file extension");
 
                 Assert.AreEqual(
-                    4,
+                    3,
                     m_Builder.WriteTimes,
                     "Should only rewrite sln file");
             }
