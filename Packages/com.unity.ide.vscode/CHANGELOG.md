@@ -1,5 +1,10 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.2.2] - 2020-09-04
+
+VSC-14 - synchronize solution file when adding new assembly
+
+
 ## [1.2.1] - 2020-05-15
 
 Source filtering adds support for asmref
