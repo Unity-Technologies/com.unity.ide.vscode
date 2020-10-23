@@ -5,10 +5,12 @@ using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
 using UnityEngine.Profiling;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace VSCodeEditor
 {
@@ -186,14 +188,54 @@ namespace VSCodeEditor
                 var affectedNames = affectedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
                 var reimportedNames = reimportedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
                 var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
-                var assemblyNames = new HashSet<string>(allProjectAssemblies.Select(assembly => Path.GetFileName(assembly.outputPath)));
+
+                var jobs = new List<Thread>();
+                var roslynAnalyzerPaths = GetAllRoslynAnalyzerPaths().ToArray();
+                var world = new ManagedObjectWorld();
 
                 foreach (var assembly in allProjectAssemblies)
                 {
                     if (!affectedAndReimported.Contains(assembly.name))
                         continue;
 
-                    SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly), assemblyNames);
+                    var hasAdditionalAssets =
+                        allAssetProjectParts.TryGetValue(assembly.name, out var additionalAssetsForProject);
+                    var assetToPackageInfo = new Dictionary<string, PackageInfo>();
+                    var isInternalizedPackagePath = new Dictionary<string, bool>();
+                    foreach (var assemblySourceFile in assembly.sourceFiles)
+                    {
+                        assetToPackageInfo[assemblySourceFile] = m_AssemblyNameProvider.FindForAssetPath(assemblySourceFile);
+                        isInternalizedPackagePath[assemblySourceFile] = m_AssemblyNameProvider.IsInternalizedPackagePath(assemblySourceFile);
+                    }
+
+                    var assemblyRef = world.Add(assembly);
+
+                    var job = new GenerationJob
+                    {
+                        Assembly = assembly,
+                        GuidProvider = m_GUIDProvider,
+                        ProjectDirectory = ProjectDirectory,
+                        ProjectName = m_ProjectName,
+                        ProjectSupportedExtensions = m_ProjectSupportedExtensions,
+                        ResponseFilesData = ParseResponseFileData(assembly),
+                        RoslynAnalyzerPaths = roslynAnalyzerPaths,
+                        FileIOProvider = m_FileIOProvider,
+                        AdditionalAssetsForProject = hasAdditionalAssets ? additionalAssetsForProject : "",
+                        AssetToPackageInfo = assetToPackageInfo,
+                        IsInternalizedPackagePath = isInternalizedPackagePath,
+                        ActiveScriptCompilationDefines = EditorUserBuildSettings.activeScriptCompilationDefines,
+                        ProjectGenerationRootNamespace = EditorSettings.projectGenerationRootNamespace
+                    };
+                    var t = new Thread(job.Execute);
+                    t.Start();
+                    jobs.Add(t);
+                    ;
+                    //SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly), assemblyNames);
+                }
+
+                foreach (var generationJob in jobs)
+                {
+                    generationJob.Join();
                 }
 
                 Profiler.EndSample();
@@ -300,10 +342,49 @@ namespace VSCodeEditor
             SyncSolution(assemblies);
             var allProjectAssemblies = RelevantAssembliesForMode(assemblies).ToList();
             var assemblyNames = new HashSet<string>(allProjectAssemblies.Select(assembly => Path.GetFileName(assembly.outputPath)));
+
+            var jobs = new List<Thread>();
+            var roslynAnalyzerPaths = GetAllRoslynAnalyzerPaths().ToArray();
+            var world = new ManagedObjectWorld();
+
             foreach (Assembly assembly in allProjectAssemblies)
             {
-                var responseFileData = ParseResponseFileData(assembly);
-                SyncProject(assembly, allAssetProjectParts, responseFileData, assemblyNames);
+                var hasAdditionalAssets =
+                    allAssetProjectParts.TryGetValue(assembly.name, out var additionalAssetsForProject);
+                var assetToPackageInfo = new Dictionary<string, PackageInfo>();
+                var isInternalizedPackagePath = new Dictionary<string, bool>();
+                foreach (var assemblySourceFile in assembly.sourceFiles)
+                {
+                    assetToPackageInfo[assemblySourceFile] = m_AssemblyNameProvider.FindForAssetPath(assemblySourceFile);
+                    isInternalizedPackagePath[assemblySourceFile] = m_AssemblyNameProvider.IsInternalizedPackagePath(assemblySourceFile);
+                }
+
+                var assemblyRef = world.Add(assembly);
+
+                var job = new GenerationJob
+                {
+                    Assembly = assembly,
+                    GuidProvider = m_GUIDProvider,
+                    ProjectDirectory = ProjectDirectory,
+                    ProjectName = m_ProjectName,
+                    ProjectSupportedExtensions = m_ProjectSupportedExtensions,
+                    ResponseFilesData = ParseResponseFileData(assembly),
+                    RoslynAnalyzerPaths = roslynAnalyzerPaths,
+                    FileIOProvider = m_FileIOProvider,
+                    AdditionalAssetsForProject = hasAdditionalAssets ? additionalAssetsForProject : "",
+                    AssetToPackageInfo = assetToPackageInfo,
+                    IsInternalizedPackagePath = isInternalizedPackagePath,
+                    ActiveScriptCompilationDefines = EditorUserBuildSettings.activeScriptCompilationDefines,
+                    ProjectGenerationRootNamespace = EditorSettings.projectGenerationRootNamespace
+                };
+                job.Execute();
+                // var responseFileData = ParseResponseFileData(assembly);
+                // SyncProject(assembly, allAssetProjectParts, responseFileData, assemblyNames);
+            }
+
+            foreach (var generationJob in jobs)
+            {
+                generationJob.Join();
             }
 
             WriteVSCodeSettingsFiles();
@@ -384,7 +465,7 @@ namespace VSCodeEditor
             List<ResponseFileData> responseFilesData,
             HashSet<string> assemblyNames)
         {
-            SyncProjectFileIfNotChanged(ProjectFile(assembly), ProjectText(assembly, allAssetsProjectParts, responseFilesData, assemblyNames, GetAllRoslynAnalyzerPaths().ToArray()));
+            SyncProjectFileIfNotChanged(ProjectFile(assembly), ProjectText(assembly, allAssetsProjectParts, responseFilesData, GetAllRoslynAnalyzerPaths().ToArray()));
         }
 
         private IEnumerable<string> GetAllRoslynAnalyzerPaths()
@@ -421,7 +502,6 @@ namespace VSCodeEditor
             Assembly assembly,
             Dictionary<string, string> allAssetsProjectParts,
             List<ResponseFileData> responseFilesData,
-            HashSet<string> assemblyNames,
             string[] roslynAnalyzerDllPaths)
         {
             var projectBuilder = new StringBuilder();
@@ -476,7 +556,6 @@ namespace VSCodeEditor
                     projectBuilder.Append("    <ProjectReference Include=\"").Append(reference.name).Append(GetProjectExtension()).Append("\">").Append(k_WindowsNewline);
                     projectBuilder.Append("      <Project>{").Append(ProjectGuid(reference.name)).Append("}</Project>").Append(k_WindowsNewline);
                     projectBuilder.Append("      <Name>").Append(reference.name).Append("</Name>").Append(k_WindowsNewline);
-                    projectBuilder.Append("      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>").Append(k_WindowsNewline);
                     projectBuilder.Append("    </ProjectReference>").Append(k_WindowsNewline);
                 }
             }
