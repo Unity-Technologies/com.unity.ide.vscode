@@ -5,13 +5,20 @@ using System.Text;
 
 namespace VSCodeEditor
 {
-    public class ProjectUtility
+    public static class ProjectUtility
     {
-        public static string ProjectFile(string assemblyName, string projectDirectory)
+        public static string ProjectFile(this string assemblyName, string projectDirectory)
         {
             var fileBuilder = new StringBuilder(assemblyName);
             fileBuilder.Append(".csproj");
             return Path.Combine(projectDirectory, fileBuilder.ToString());
+        }
+
+        public static string NormalizePath(this string path)
+        {
+            if (Path.DirectorySeparatorChar == '\\')
+                return path.Replace('/', Path.DirectorySeparatorChar);
+            return path.Replace('\\', Path.DirectorySeparatorChar);
         }
     }
 }

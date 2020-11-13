@@ -86,7 +86,7 @@ namespace VSCodeEditor.Tests
                     $"    <AssemblyName>{m_Builder.Assembly.name}</AssemblyName>",
                     "    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>",
                     "    <FileAlignment>512</FileAlignment>",
-                    "    <BaseDirectory>.</BaseDiFullrectory>",
+                    "    <BaseDirectory>.</BaseDirectory>",
                     "  </PropertyGroup>",
                     "  <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' \">",
                     "    <DebugSymbols>true</DebugSymbols>",

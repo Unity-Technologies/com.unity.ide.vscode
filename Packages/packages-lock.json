@@ -5,7 +5,7 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
-      "url": "https://packages.unity.com"
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.ide.rider": {
       "version": "2.0.7",
@@ -14,7 +14,7 @@
       "dependencies": {
         "com.unity.test-framework": "1.1.1"
       },
-      "url": "https://packages.unity.com"
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.ide.vscode": {
       "version": "file:com.unity.ide.vscode",
@@ -30,6 +30,40 @@
         "nuget.moq": "1.0.0"
       }
     },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "2.0.0",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
+    },
+    "com.unity.package-manager-doctools": {
+      "version": "file:com.unity.package-manager-doctools-master",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.package-validation-suite": "0.10.0-preview",
+        "com.unity.nuget.newtonsoft-json": "2.0.0-preview"
+      }
+    },
+    "com.unity.package-validation-suite": {
+      "version": "0.10.0-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "nuget.mono-cecil": "0.1.6-preview"
+      },
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
+    },
+    "com.unity.performance-test-suite": {
+      "version": "file:com.unity.performance-test-suite",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.5",
+        "com.unity.test-framework.performance": "2.4.0"
+      }
+    },
     "com.unity.test-framework": {
       "version": "1.1.16",
       "depth": 0,
@@ -39,14 +73,31 @@
         "com.unity.modules.imgui": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0"
       },
-      "url": "https://packages.unity.com"
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
+    },
+    "com.unity.test-framework.performance": {
+      "version": "2.4.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.0",
+        "com.unity.nuget.newtonsoft-json": "2.0.0"
+      },
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "nuget.castle-core": {
       "version": "1.0.1",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
-      "url": "https://packages.unity.com"
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
+    },
+    "nuget.mono-cecil": {
+      "version": "0.1.6-preview",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "nuget.moq": {
       "version": "1.0.0",
@@ -55,7 +106,7 @@
       "dependencies": {
         "nuget.castle-core": "1.0.1"
       },
-      "url": "https://packages.unity.com"
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.modules.imgui": {
       "version": "1.0.0",

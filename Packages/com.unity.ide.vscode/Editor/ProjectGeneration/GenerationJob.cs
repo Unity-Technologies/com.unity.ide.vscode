@@ -88,12 +88,6 @@ namespace VSCodeEditor
             return IsSupportedExtension(extension);
         }
 
-        static string NormalizePath(string path)
-        {
-            if (Path.DirectorySeparatorChar == '\\')
-                return path.Replace('/', Path.DirectorySeparatorChar);
-            return path.Replace('\\', Path.DirectorySeparatorChar);
-        }
 
         static string SkipPathPrefix(string path, string prefix)
         {
@@ -107,13 +101,12 @@ namespace VSCodeEditor
             var projectDir = ProjectDirectory.Replace('/', '\\');
             file = file.Replace('/', '\\');
             var path = SkipPathPrefix(file, projectDir);
-
-            var packageInfo = AssetToPackageInfo.ContainsKey(path.Replace('\\', '/'));
+            var packageInfo = AssetToPackageInfo[file] != null;
             if (packageInfo)
             {
                 // We have to normalize the path, because the PackageManagerRemapper assumes
                 // dir seperators will be os specific.
-                var absolutePath = Path.GetFullPath(NormalizePath(path)).Replace('/', '\\');
+                var absolutePath = Path.GetFullPath(path.NormalizePath()).Replace('/', '\\');
                 path = SkipPathPrefix(absolutePath, projectDir);
             }
 
@@ -123,7 +116,7 @@ namespace VSCodeEditor
         bool ShouldFileBePartOfSolution(string file)
         {
             // Exclude files coming from packages except if they are internalized.
-            if (IsInternalizedPackagePath[file])
+            if (IsInternalizedPackagePath.ContainsKey(file) && IsInternalizedPackagePath[file])
             {
                 return false;
             }

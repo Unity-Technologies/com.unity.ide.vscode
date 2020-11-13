@@ -188,10 +188,10 @@ namespace VSCodeEditor
                 var affectedNames = affectedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
                 var reimportedNames = reimportedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
                 var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
+                var assemblyNames = new HashSet<string>(allProjectAssemblies.Select(assembly => Path.GetFileName(assembly.outputPath)));
 
                 var jobs = new List<Thread>();
                 var roslynAnalyzerPaths = GetAllRoslynAnalyzerPaths().ToArray();
-                var world = new ManagedObjectWorld();
 
                 foreach (var assembly in allProjectAssemblies)
                 {
@@ -204,11 +204,9 @@ namespace VSCodeEditor
                     var isInternalizedPackagePath = new Dictionary<string, bool>();
                     foreach (var assemblySourceFile in assembly.sourceFiles)
                     {
-                        assetToPackageInfo[assemblySourceFile] = m_AssemblyNameProvider.FindForAssetPath(assemblySourceFile);
-                        isInternalizedPackagePath[assemblySourceFile] = m_AssemblyNameProvider.IsInternalizedPackagePath(assemblySourceFile);
+                        assetToPackageInfo[assemblySourceFile.NormalizePath()] = m_AssemblyNameProvider.FindForAssetPath(assemblySourceFile);
+                        isInternalizedPackagePath[assemblySourceFile.NormalizePath()] = m_AssemblyNameProvider.IsInternalizedPackagePath(assemblySourceFile);
                     }
-
-                    var assemblyRef = world.Add(assembly);
 
                     var job = new GenerationJob
                     {
@@ -229,8 +227,7 @@ namespace VSCodeEditor
                     var t = new Thread(job.Execute);
                     t.Start();
                     jobs.Add(t);
-                    ;
-                    //SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly), assemblyNames);
+                    // SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly), assemblyNames);
                 }
 
                 foreach (var generationJob in jobs)
@@ -355,8 +352,8 @@ namespace VSCodeEditor
                 var isInternalizedPackagePath = new Dictionary<string, bool>();
                 foreach (var assemblySourceFile in assembly.sourceFiles)
                 {
-                    assetToPackageInfo[assemblySourceFile] = m_AssemblyNameProvider.FindForAssetPath(assemblySourceFile);
-                    isInternalizedPackagePath[assemblySourceFile] = m_AssemblyNameProvider.IsInternalizedPackagePath(assemblySourceFile);
+                    assetToPackageInfo[assemblySourceFile.NormalizePath()] = m_AssemblyNameProvider.FindForAssetPath(assemblySourceFile);
+                    isInternalizedPackagePath[assemblySourceFile.NormalizePath()] = m_AssemblyNameProvider.IsInternalizedPackagePath(assemblySourceFile);
                 }
 
                 var assemblyRef = world.Add(assembly);
@@ -377,7 +374,9 @@ namespace VSCodeEditor
                     ActiveScriptCompilationDefines = EditorUserBuildSettings.activeScriptCompilationDefines,
                     ProjectGenerationRootNamespace = EditorSettings.projectGenerationRootNamespace
                 };
-                job.Execute();
+                var t = new Thread(job.Execute);
+                t.Start();
+                jobs.Add(t);
                 // var responseFileData = ParseResponseFileData(assembly);
                 // SyncProject(assembly, allAssetProjectParts, responseFileData, assemblyNames);
             }
