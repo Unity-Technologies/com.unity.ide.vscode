@@ -2,6 +2,10 @@
   "disableProjectUpdate": true,
   "dependencies": {
     "com.unity.ide.rider": "2.0.7",
+    "com.unity.performance-test-suite": "file:C:/projects/com.unity.performance-test-suite",
     "com.unity.test-framework": "1.1.16"
-  }
+  },
+  "testables":[
+    "com.unity.performance-test-suite"
+  ]
 }
