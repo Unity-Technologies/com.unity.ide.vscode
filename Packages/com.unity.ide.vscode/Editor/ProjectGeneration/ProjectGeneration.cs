@@ -31,7 +31,7 @@ namespace VSCodeEditor
             CSharp
         }
 
-        public const string MSBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
+        public static readonly string MSBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
 
         const string k_WindowsNewline = "\r\n";
 
