@@ -21,8 +21,14 @@ namespace VSCodeEditor
         void ToggleProjectGeneration(ProjectGenerationFlag preference);
     }
 
-    internal class AssemblyNameProvider : IAssemblyNameProvider
+    internal interface IPackageInfoCache{
+        void ResetPackageInfoCache();
+    }
+
+    internal class AssemblyNameProvider : IAssemblyNameProvider, IPackageInfoCache
     {
+        private readonly Dictionary<string, UnityEditor.PackageManager.PackageInfo> m_PackageInfoCache = new Dictionary<string, UnityEditor.PackageManager.PackageInfo>();
+
         ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)EditorPrefs.GetInt("unity_project_generation_flag", 0);
 
         public string[] ProjectSupportedExtensions => EditorSettings.projectGenerationUserExtensions;
@@ -53,9 +59,44 @@ namespace VSCodeEditor
             return AssetDatabase.GetAllAssetPaths();
         }
 
+        private static string ResolvePotentialParentPackageAssetPath(string assetPath)
+		{
+			var lowered = assetPath.ToLowerInvariant();
+            if (!lowered.StartsWith("packages/"))
+            {
+				return null;
+			}
+
+			var followupSeparator = lowered.IndexOf('/', "packages/".Length);
+			if (followupSeparator == -1)
+			{
+				return lowered;
+			}
+
+			return lowered.Substring(0, followupSeparator);
+		}
+
+        public void ResetPackageInfoCache()
+		{
+			m_PackageInfoCache.Clear();
+		}
+
         public UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath)
         {
-            return UnityEditor.PackageManager.PackageInfo.FindForAssetPath(assetPath);
+            var parentPackageAssetPath = ResolvePotentialParentPackageAssetPath(assetPath);
+			if (parentPackageAssetPath == null)
+			{
+				return null;
+			}
+
+			if (m_PackageInfoCache.TryGetValue(parentPackageAssetPath, out var cachedPackageInfo))
+			{
+				return cachedPackageInfo;
+			}
+
+			var result = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(parentPackageAssetPath);
+			m_PackageInfoCache[parentPackageAssetPath] = result;
+			return result;
         }
 
         public ResponseFileData ParseResponseFile(string responseFilePath, string projectDirectory, string[] systemReferenceDirectories)
