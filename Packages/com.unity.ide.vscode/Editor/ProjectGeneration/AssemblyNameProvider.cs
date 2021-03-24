@@ -61,19 +61,19 @@ namespace VSCodeEditor
 
         private static string ResolvePotentialParentPackageAssetPath(string assetPath)
 		{
-			var lowered = assetPath.ToLowerInvariant();
-            if (!lowered.StartsWith("packages/"))
+            const string packagesPrefix = "packages/";
+            if (!assetPath.StartsWith(packagesPrefix, StringComparison.OrdinalIgnoreCase))
             {
-				return null;
-			}
+                return null;
+            }
 
-			var followupSeparator = lowered.IndexOf('/', "packages/".Length);
-			if (followupSeparator == -1)
-			{
-				return lowered;
-			}
+            var followupSeparator = assetPath.IndexOf('/', packagesPrefix.Length);
+            if (followupSeparator == -1)
+            {
+                return assetPath.ToLowerInvariant();
+            }
 
-			return lowered.Substring(0, followupSeparator);
+            return assetPath.Substring(0, followupSeparator).ToLowerInvariant();
 		}
 
         public void ResetPackageInfoCache()
