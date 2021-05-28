@@ -98,12 +98,6 @@ namespace VSCodeEditor.Tests
             {
                 var synchronizer = m_Builder.Build();
 
-                Assert.IsFalse(
-                    synchronizer.SyncIfNeeded(new List<string>(), new[] {$"reimport.{reimportedFile}"}),
-                    "Before sync has been called, we should not allow SyncIfNeeded");
-
-                synchronizer.Sync();
-
                 Assert.That(synchronizer.SyncIfNeeded(new List<string>(), new[] {$"reimport.{reimportedFile}"}));
             }
 
@@ -203,15 +197,9 @@ namespace VSCodeEditor.Tests
             }
 
             [Test, TestCaseSource(nameof(s_ExtensionsRequireReSync))]
-            public void AfterSync_WillResync_WhenAffectedFileTypes(string fileExtension)
+            public void WillResync_WhenAffectedFileTypes(string fileExtension)
             {
                 var synchronizer = m_Builder.Build();
-
-                Assert.IsFalse(
-                    synchronizer.SyncIfNeeded(new List<string> {$"reimport.{fileExtension}"}, new string[0]),
-                    "Before sync has been called, we should not allow SyncIfNeeded");
-
-                synchronizer.Sync();
 
                 Assert.That(synchronizer.SyncIfNeeded(new List<string> {$"reimport.{fileExtension}"}, new string[0]));
             }
