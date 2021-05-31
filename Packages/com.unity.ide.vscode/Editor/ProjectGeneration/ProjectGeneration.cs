@@ -174,33 +174,32 @@ namespace VSCodeEditor
             Profiler.BeginSample("SolutionSynchronizerSync");
             SetupProjectSupportedExtensions();
 
-            // Don't sync if we haven't synced before
-            if (SolutionExists() && HasFilesBeenModified(affectedFiles, reimportedFiles))
+            if (!HasFilesBeenModified(affectedFiles, reimportedFiles))
             {
-                var assemblies = m_AssemblyNameProvider.GetAssemblies(ShouldFileBePartOfSolution);
-                var allProjectAssemblies = RelevantAssembliesForMode(assemblies).ToList();
-                SyncSolution(allProjectAssemblies);
-
-                var allAssetProjectParts = GenerateAllAssetProjectParts();
-
-                var affectedNames = affectedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
-                var reimportedNames = reimportedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
-                var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
-
-                foreach (var assembly in allProjectAssemblies)
-                {
-                    if (!affectedAndReimported.Contains(assembly.name))
-                        continue;
-
-                    SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly));
-                }
-
                 Profiler.EndSample();
-                return true;
+                return false;
+            }
+
+            var assemblies = m_AssemblyNameProvider.GetAssemblies(ShouldFileBePartOfSolution);
+            var allProjectAssemblies = RelevantAssembliesForMode(assemblies).ToList();
+            SyncSolution(allProjectAssemblies);
+
+            var allAssetProjectParts = GenerateAllAssetProjectParts();
+
+            var affectedNames = affectedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
+            var reimportedNames = reimportedFiles.Select(asset => m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset)).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Split(new [] {".dll"}, StringSplitOptions.RemoveEmptyEntries)[0]);
+            var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
+
+            foreach (var assembly in allProjectAssemblies)
+            {
+                if (!affectedAndReimported.Contains(assembly.name))
+                    continue;
+
+                SyncProject(assembly, allAssetProjectParts, ParseResponseFileData(assembly));
             }
 
             Profiler.EndSample();
-            return false;
+            return true;
         }
 
         bool HasFilesBeenModified(List<string> affectedFiles, string[] reimportedFiles)
