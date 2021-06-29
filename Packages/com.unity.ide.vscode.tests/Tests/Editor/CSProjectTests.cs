@@ -47,7 +47,7 @@ namespace VSCodeEditor.Tests
             [Test]
             public void AbsoluteSourceFilePaths_WillBeMadeRelativeToProjectDirectory()
             {
-                var absoluteFilePath = Path.Combine(SynchronizerBuilder.projectDirectory, "dimmer.cs");
+                var absoluteFilePath = MakeAbsolutePath("dimmer.cs");
                 var synchronizer = m_Builder.WithAssemblyData(files: new[] { absoluteFilePath }).Build();
 
                 synchronizer.Sync();
@@ -137,8 +137,8 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
 
-                var assemblyACSproject = Path.Combine(SynchronizerBuilder.projectDirectory, $"{assemblyA.name}.csproj");
-                var assemblyBCSproject = Path.Combine(SynchronizerBuilder.projectDirectory, $"{assemblyB.name}.csproj");
+                var assemblyACSproject = MakeAbsolutePath($"{assemblyA.name}.csproj");
+                var assemblyBCSproject = MakeAbsolutePath($"{assemblyB.name}.csproj");
 
                 Assert.True(m_Builder.FileExists(assemblyACSproject));
                 Assert.True(m_Builder.FileExists(assemblyBCSproject));
@@ -212,7 +212,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 Assert.False(
-                    m_Builder.FileExists(Path.Combine(SynchronizerBuilder.projectDirectory, $"{m_Builder.Assembly.name}.csproj")),
+                    m_Builder.FileExists(MakeAbsolutePath($"{m_Builder.Assembly.name}.csproj")),
                     "Should not create csproj file for assembly with no cs file");
             }
 
@@ -247,7 +247,7 @@ namespace VSCodeEditor.Tests
             {
                 var assetPath = "Assets/Asset.cs";
                 var synchronizer = m_Builder
-                    .WithAssemblyData(files: new[] { Path.Combine(SynchronizerBuilder.projectDirectory, assetPath) })
+                    .WithAssemblyData(files: new[] { MakeAbsolutePath(assetPath) })
                     .Build();
 
                 synchronizer.Sync();
@@ -269,7 +269,7 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
 
-                StringAssert.Contains(assetPath.Replace('/', '\\'), m_Builder.ReadProjectFile(assembly));
+                StringAssert.Contains(assetPath.NormalizePath(), m_Builder.ReadProjectFile(assembly));
             }
 
             [Test]
@@ -296,7 +296,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var assembly = m_Builder.Assembly;
-                StringAssert.Contains(assembly.sourceFiles[0].Replace('/', '\\'), m_Builder.ReadProjectFile(assembly));
+                StringAssert.Contains(assembly.sourceFiles[0].NormalizePath(), m_Builder.ReadProjectFile(assembly));
             }
 
             [Test]
@@ -493,7 +493,7 @@ namespace VSCodeEditor.Tests
             {
                 var combined = string.Join(";", paths);
                 const string additionalFileTemplate = @"    <Analyzer Include=""{0}"" />";
-                var expectedOutput = paths.Select(x => string.Format(additionalFileTemplate, x)).ToArray();
+                var expectedOutput = paths.Select(x => string.Format(additionalFileTemplate, MakeAbsolutePath(x).NormalizePath())).ToArray();
 
                 CheckOtherArgument(new[] { $"-a:{combined}" }, expectedOutput);
                 CheckOtherArgument(new[] { $"-analyzer:{combined}" }, expectedOutput);
@@ -562,7 +562,7 @@ namespace VSCodeEditor.Tests
 
                 string projectFile = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 XmlDocument projectFileXml = XMLUtilities.FromText(projectFile);
-                XMLUtilities.AssertAnalyzerItemsMatchExactly(projectFileXml, new[] { roslynAnalyzerDllPath });
+                XMLUtilities.AssertAnalyzerItemsMatchExactly(projectFileXml, new[] { MakeAbsolutePath(roslynAnalyzerDllPath).NormalizePath() });
             }
 
             [Test]
