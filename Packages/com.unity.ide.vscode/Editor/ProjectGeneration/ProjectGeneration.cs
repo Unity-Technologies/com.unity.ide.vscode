@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
 using UnityEngine.Profiling;
+using VSCodeEditor.Tests;
 
 namespace VSCodeEditor
 {
@@ -519,7 +520,13 @@ namespace VSCodeEditor
                 .Concat(m_AssemblyNameProvider.GetRoslynAnalyzerPaths())
 #endif
                 .Distinct()
+                .Select(path => MakeAbsolutePath(path, ProjectDirectory).NormalizePath())
                 .ToArray());
+        }
+        
+        private static string MakeAbsolutePath(string path, string projectDirectory)
+        {
+            return Path.IsPathRooted(path) ? path : Path.Combine(projectDirectory, path);
         }
 
         private static ILookup<string, string> GetOtherArgumentsFromResponseFilesData(List<ResponseFileData> responseFilesData)
