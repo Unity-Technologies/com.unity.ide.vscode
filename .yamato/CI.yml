@@ -6,7 +6,9 @@ editors:
   - version: 2019.4
   - version: 2020.1
   - version: 2020.2
+  - version: 2020.3
   - version: 2021.1
+  - version: 2021.2
   - version: trunk
 platforms:
   - name: win
@@ -189,7 +191,7 @@ prepare_promotion:
     - if NOT "%GIT_BRANCH%" == "master" echo %GIT_BRANCH% && exit 1
     - choco install --no-progress -y python3 -source https://artifactory.bf.unity3d.com/artifactory/api/nuget/unity-choco-local
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git C:\buildslave\Nicklas-CI
-    - py -3 C:\buildslave\Nicklas-CI\prepare_promotion.py C:\buildslave\unity\build upm-ci~/packages/packages.json {{codeeditor}}
+    - py -3 C:\buildslave\Nicklas-CI\prepare_promotion.py C:\buildslave\unity\build upm-ci~/packages/packages.json
 
 
 create_pull_request:
