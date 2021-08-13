@@ -26,7 +26,7 @@ namespace VSCodeEditor.Tests
 
                 var csprojContent = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 StringAssert.DoesNotContain(illegalFormattedFileName, csprojContent);
-                StringAssert.Contains(expectedFileName, csprojContent);
+                StringAssert.Contains(expectedFileName.NormalizePath(), csprojContent);
             }
 
             [Test]
@@ -364,7 +364,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojContent = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                StringAssert.Contains(filePath, csprojContent);
+                StringAssert.Contains(filePath.NormalizePath(), csprojContent);
             }
 
             [Test]
@@ -579,7 +579,7 @@ namespace VSCodeEditor.Tests
                 XmlDocument scriptProject = XMLUtilities.FromText(csprojFileContents);
                 XMLUtilities.AssertCompileItemsMatchExactly(scriptProject, new[] { "file.cs" });
                 XMLUtilities.AssertNonCompileItemsMatchExactly(scriptProject, new string[0]);
-                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"reference\">\\W*<HintPath>{SynchronizerBuilder.projectDirectory}/{referenceDll}\\W*</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"reference\">\\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory,referenceDll))}\\W*</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -593,7 +593,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"Goodbye\">\\W*<HintPath>{SynchronizerBuilder.projectDirectory}/Folder/Path With Space/Goodbye.dll\\W*</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"Goodbye\">\\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory, "Folder/Path With Space/Goodbye.dll".NormalizePath()))}\\W*</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -622,8 +622,8 @@ namespace VSCodeEditor.Tests
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
 
-                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""Hello"">\W*<HintPath>{SynchronizerBuilder.projectDirectory}/Hello\.dll</HintPath>\W*</Reference>"));
-                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""MyPlugin"">\W*<HintPath>{SynchronizerBuilder.projectDirectory}/MyPlugin\.dll</HintPath>\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""Hello"">\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory, "Hello.dll"))}</HintPath>\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""MyPlugin"">\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory, "MyPlugin.dll"))}</HintPath>\W*</Reference>"));
             }
 
             [Test]
@@ -650,8 +650,8 @@ namespace VSCodeEditor.Tests
                 string[] files = { "test.cs" };
                 var assemblyReferences = new[]
                 {
-                    new Assembly("MyPlugin", "/some/path/MyPlugin.dll", files, new string[0], new Assembly[0], new string[0], AssemblyFlags.None),
-                    new Assembly("Hello", "/some/path/Hello.dll", files, new string[0], new Assembly[0], new string[0], AssemblyFlags.None),
+                    new Assembly("MyPlugin", "/some/path/MyPlugin.dll".NormalizePath(), files, new string[0], new Assembly[0], new string[0], AssemblyFlags.None),
+                    new Assembly("Hello", "/some/path/Hello.dll".NormalizePath(), files, new string[0], new Assembly[0], new string[0], AssemblyFlags.None),
                 };
                 var synchronizer = m_Builder.WithPackageAsset(files[0], true).WithAssemblyData(assemblyReferences: assemblyReferences).Build();
 
@@ -660,8 +660,8 @@ namespace VSCodeEditor.Tests
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
                 Assert.That(csprojFileContents, Does.Not.Match($@"<ProjectReference Include=""{assemblyReferences[0].name}\.csproj"">[\S\s]*?</ProjectReference>"));
                 Assert.That(csprojFileContents, Does.Not.Match($@"<ProjectReference Include=""{assemblyReferences[1].name}\.csproj"">[\S\s]*?</ProjectReference>"));
-                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"{assemblyReferences[0].name}\">\\W*<HintPath>{assemblyReferences[0].outputPath}</HintPath>\\W*</Reference>"));
-                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"{assemblyReferences[1].name}\">\\W*<HintPath>{assemblyReferences[1].outputPath}</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"{assemblyReferences[0].name}\">\\W*<HintPath>{Regex.Escape(assemblyReferences[0].outputPath)}</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"{assemblyReferences[1].name}\">\\W*<HintPath>{Regex.Escape(assemblyReferences[1].outputPath)}</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -669,16 +669,16 @@ namespace VSCodeEditor.Tests
             {
                 var compiledAssemblyReferences = new[]
                 {
-                    "/some/path/MyPlugin.dll",
-                    "/some/other/path/Hello.dll",
+                    "/some/path/MyPlugin.dll".NormalizePath(),
+                    "/some/other/path/Hello.dll".NormalizePath(),
                 };
                 var synchronizer = m_Builder.WithAssemblyData(compiledAssemblyReferences: compiledAssemblyReferences).Build();
 
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.That(csprojFileContents, Does.Match("<Reference Include=\"Hello\">\\W*<HintPath>/some/other/path/Hello.dll</HintPath>\\W*</Reference>"));
-                Assert.That(csprojFileContents, Does.Match("<Reference Include=\"MyPlugin\">\\W*<HintPath>/some/path/MyPlugin.dll</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"Hello\">\\W*<HintPath>{Regex.Escape(compiledAssemblyReferences[1])}</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"MyPlugin\">\\W*<HintPath>{Regex.Escape(compiledAssemblyReferences[0])}</HintPath>\\W*</Reference>"));
             }
 
             [Test]

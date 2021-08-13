@@ -16,7 +16,7 @@ namespace VSCodeEditor.Tests
 
         IGenerator m_Generator;
         Mock<IAssemblyNameProvider> m_AssemblyProvider = new Mock<IAssemblyNameProvider>();
-        public const string projectDirectory = "/FullPath/Example";
+        public static readonly string projectDirectory = "/FullPath/Example".NormalizePath();
 
         MockFileIO m_FileIoMock = new MockFileIO();
         Mock<IGUIDGenerator> m_GUIDGenerator = new Mock<IGUIDGenerator>();

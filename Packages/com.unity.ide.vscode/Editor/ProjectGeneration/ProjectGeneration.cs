@@ -151,7 +151,7 @@ namespace VSCodeEditor
 
         public ProjectGeneration(string tempDirectory, IAssemblyNameProvider assemblyNameProvider, IFileIO fileIO, IGUIDGenerator guidGenerator)
         {
-            ProjectDirectory = tempDirectory.Replace('\\', '/');
+            ProjectDirectory = tempDirectory.NormalizePath();
             m_ProjectName = Path.GetFileName(ProjectDirectory);
             m_AssemblyNameProvider = assemblyNameProvider;
             m_FileIOProvider = fileIO;
@@ -473,10 +473,8 @@ namespace VSCodeEditor
 
         static void AppendReference(string fullReference, StringBuilder projectBuilder)
         {
-            //replace \ with / and \\ with /
             var escapedFullPath = SecurityElement.Escape(fullReference);
-            escapedFullPath = escapedFullPath.Replace("\\\\", "/");
-            escapedFullPath = escapedFullPath.Replace("\\", "/");
+            escapedFullPath = escapedFullPath.NormalizePath();
             projectBuilder.Append("    <Reference Include=\"").Append(Path.GetFileNameWithoutExtension(escapedFullPath)).Append("\">").Append(k_WindowsNewline);
             projectBuilder.Append("        <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
             projectBuilder.Append("    </Reference>").Append(k_WindowsNewline);
@@ -683,16 +681,16 @@ namespace VSCodeEditor
 
         string EscapedRelativePathFor(string file)
         {
-            var projectDir = ProjectDirectory.Replace('/', '\\');
-            file = file.Replace('/', '\\');
+            var projectDir = ProjectDirectory.NormalizePath();
+            file = file.NormalizePath();
             var path = SkipPathPrefix(file, projectDir);
 
-            var packageInfo = m_AssemblyNameProvider.FindForAssetPath(path.Replace('\\', '/'));
+            var packageInfo = m_AssemblyNameProvider.FindForAssetPath(path.NormalizePath());
             if (packageInfo != null)
             {
                 // We have to normalize the path, because the PackageManagerRemapper assumes
                 // dir seperators will be os specific.
-                var absolutePath = Path.GetFullPath(NormalizePath(path)).Replace('/', '\\');
+                var absolutePath = Path.GetFullPath(path).NormalizePath();
                 path = SkipPathPrefix(absolutePath, projectDir);
             }
 
@@ -701,16 +699,9 @@ namespace VSCodeEditor
 
         static string SkipPathPrefix(string path, string prefix)
         {
-            if (path.StartsWith($@"{prefix}\"))
+            if (path.StartsWith($@"{prefix}{Path.DirectorySeparatorChar}"))
                 return path.Substring(prefix.Length + 1);
             return path;
-        }
-
-        static string NormalizePath(string path)
-        {
-            if (Path.DirectorySeparatorChar == '\\')
-                return path.Replace('/', Path.DirectorySeparatorChar);
-            return path.Replace('\\', Path.DirectorySeparatorChar);
         }
 
         string ProjectGuid(string assembly)

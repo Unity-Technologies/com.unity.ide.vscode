@@ -7,9 +7,20 @@ namespace VSCodeEditor.Tests
 {
     internal static class StringUtils
     {
+        private const char WinSeparator = '\\';
+        private const char UnixSeparator = '/';
+
         public static string NormalizePath(this string path)
         {
-            return path.Replace(Path.DirectorySeparatorChar == '\\' ? '/' : '\\', Path.DirectorySeparatorChar);
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            if (Path.DirectorySeparatorChar == WinSeparator)
+                path = path.Replace(UnixSeparator, WinSeparator);
+            if (Path.DirectorySeparatorChar == UnixSeparator)
+                path = path.Replace(WinSeparator, UnixSeparator);
+
+            return path.Replace(string.Concat(WinSeparator, WinSeparator), WinSeparator.ToString());
         }
     }
 }

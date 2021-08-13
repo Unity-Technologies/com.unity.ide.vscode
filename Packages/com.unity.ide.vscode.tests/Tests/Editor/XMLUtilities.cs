@@ -35,7 +35,7 @@ namespace VSCodeEditor.Tests
 
         static IEnumerable<string> RelativeAssetPathsFor(IEnumerable<string> fileNames)
         {
-            return fileNames.Select(fileName => fileName.Replace('/', '\\')).ToArray();
+            return fileNames.Select(fileName => fileName.NormalizePath()).ToArray();
         }
 
         static IEnumerable<string> SelectAttributeValues(this XmlDocument xmlDocument, string xpathQuery, XmlNamespaceManager xmlNamespaceManager)
