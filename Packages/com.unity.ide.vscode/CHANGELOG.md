@@ -1,5 +1,18 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.2.4] - 2021-08-18
+
+- Allow for per assembly roslyn analyzers
+- Optimize package info look up performance. Reducing project generation time
+- Use absolute path for Roslyn analyzers
+- Always sync on asset updates
+
+
+## [1.2.3] - 2020-10-23
+
+Remove workaround for VSCode omnisharp (as of https://github.com/OmniSharp/omnisharp-vscode/issues/4113 we no longer need to disable the referenceoutputassemblies).
+
+
 ## [1.2.2] - 2020-09-04
 
 VSC-14 - synchronize solution file when adding new assembly

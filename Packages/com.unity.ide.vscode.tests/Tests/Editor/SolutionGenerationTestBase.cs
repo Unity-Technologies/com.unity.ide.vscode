@@ -1,3 +1,4 @@
+using System.IO;
 using NUnit.Framework;
 using Unity.CodeEditor;
 
@@ -25,6 +26,11 @@ namespace VSCodeEditor.Tests
         public void SetUp()
         {
             m_Builder = new SynchronizerBuilder();
+        }
+            
+        protected static string MakeAbsolutePath(string path)
+        {
+            return Path.IsPathRooted(path) ? path : Path.Combine(SynchronizerBuilder.projectDirectory, path);
         }
     }
 }
