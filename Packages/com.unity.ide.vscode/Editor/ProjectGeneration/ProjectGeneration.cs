@@ -521,7 +521,7 @@ namespace VSCodeEditor
                 .Select(path => MakeAbsolutePath(path, ProjectDirectory).NormalizePath())
                 .ToArray());
         }
-        
+
         private static string MakeAbsolutePath(string path, string projectDirectory)
         {
             return Path.IsPathRooted(path) ? path : Path.Combine(projectDirectory, path);
@@ -685,7 +685,7 @@ namespace VSCodeEditor
             file = file.NormalizePath();
             var path = SkipPathPrefix(file, projectDir);
 
-            var packageInfo = m_AssemblyNameProvider.FindForAssetPath(path.NormalizePath());
+            var packageInfo = m_AssemblyNameProvider.FindForAssetPath(path.Replace('\\', '/'));
             if (packageInfo != null)
             {
                 // We have to normalize the path, because the PackageManagerRemapper assumes
