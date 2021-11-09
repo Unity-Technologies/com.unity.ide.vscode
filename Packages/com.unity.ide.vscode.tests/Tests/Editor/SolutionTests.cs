@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor.Compilation;
+using UnityEditor;
+
 
 namespace VSCodeEditor.Tests
 {
@@ -269,6 +271,47 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 Assert.AreEqual(solutionTemplate, m_Builder.ReadFile(synchronizer.SolutionFile()));
+            }
+        }
+
+        class OnGenerationSolution : ProjectGenerationTestBase 
+        {
+            static bool m_HasCalledOnGeneratedSlnSolution = false;
+
+            const string solutionGUID = "SolutionGUID";
+            const string newSolutionGUID = "1234567";
+
+            public class OnGenerationCallbacks : AssetPostprocessor 
+            {
+                public static string OnGeneratedSlnSolution(string path, string content)
+                {
+                    m_HasCalledOnGeneratedSlnSolution = true;
+                    return content.Replace(solutionGUID, newSolutionGUID);
+                }
+            }
+
+            [Test]
+            public void OnGenerationSolution_Called()
+            {
+                var synchronizer = m_Builder.Build();
+                synchronizer.Sync();
+
+                Assert.True(m_HasCalledOnGeneratedSlnSolution);
+            }
+
+            [Test]
+            public void OnGenerationSolution_Modifed()
+            {
+                var synchronizer = m_Builder
+                    .WithSolutionGuid(solutionGUID)
+                    .Build();
+
+                synchronizer.Sync();
+
+                var slnFileContents = m_Builder.ReadFile(synchronizer.SolutionFile());
+                StringAssert.DoesNotContain(solutionGUID, slnFileContents);
+                StringAssert.Contains(newSolutionGUID, slnFileContents);
+                Assert.True(m_HasCalledOnGeneratedSlnSolution);
             }
         }
     }

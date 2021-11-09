@@ -758,5 +758,44 @@ namespace VSCodeEditor.Tests
                 Assert.That(aCsprojContent, Does.Match("<DefineConstants>.*;RootedDefine.*</DefineConstants>"));
             }
         }
+
+        class OnGenerationProject : ProjectGenerationTestBase 
+        {
+            static bool m_HasCalledOnGeneratedCSProject = false;
+
+            public class OnGenerationCallbacks : AssetPostprocessor 
+            {
+                public static string OnGeneratedCSProject(string path, string content) 
+                {
+                    m_HasCalledOnGeneratedCSProject = true;
+                    return content.Replace("fileA", "fileD");
+                }
+            }
+
+            [Test]
+            public void OnGenerationProject_Called()
+            {
+                var synchronizer = m_Builder.Build();
+                synchronizer.Sync();
+
+                Assert.True(m_HasCalledOnGeneratedCSProject);
+            }
+
+            [Test]
+            public void OnGenerationProject_Modifed()
+            {
+                var files = new[] { "fileA.cs", "fileB.cs", "fileC.cs" };
+                var synchronizer = m_Builder
+                    .WithAssemblyData(files: files)
+                    .Build();
+
+                synchronizer.Sync();
+
+                var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
+                StringAssert.DoesNotContain("fileA.cs", csprojFileContents);
+                StringAssert.Contains("fileD.cs", csprojFileContents);
+                Assert.True(m_HasCalledOnGeneratedCSProject);
+            }
+        }
     }
 }
