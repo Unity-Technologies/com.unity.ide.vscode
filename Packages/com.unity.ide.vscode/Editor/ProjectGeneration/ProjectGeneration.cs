@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
+using SR = System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEditor.Compilation;
@@ -213,10 +214,54 @@ namespace VSCodeEditor
             return k_ReimportSyncExtensions.Contains(new FileInfo(asset).Extension);
         }
 
+        private static IEnumerable<SR.MethodInfo> GetPostProcessorCallbacks(string name)
+        {
+            return TypeCache
+                .GetTypesDerivedFrom<AssetPostprocessor>()
+                .Select(t => t.GetMethod(name, SR.BindingFlags.Public | SR.BindingFlags.NonPublic | SR.BindingFlags.Static))
+                .Where(m => m != null);
+        }
+
+        static void OnGeneratedCSProjectFiles()
+        {
+            foreach (var method in GetPostProcessorCallbacks(nameof(OnGeneratedCSProjectFiles)))
+            {
+                method.Invoke(null, Array.Empty<object>());
+            }
+        }
+
+        private static string InvokeAssetPostProcessorGenerationCallbacks(string name, string path, string content)
+        {
+            foreach (var method in GetPostProcessorCallbacks(name))
+            {
+                var args = new[] { path, content };
+                var returnValue = method.Invoke(null, args);
+                if (method.ReturnType == typeof(string))
+                {
+                    // We want to chain content update between invocations
+                    content = (string)returnValue;
+                }
+            }
+
+            return content;
+        }
+
+        private static string OnGeneratedCSProject(string path, string content)
+        {
+            return InvokeAssetPostProcessorGenerationCallbacks(nameof(OnGeneratedCSProject), path, content);
+        }
+
+        private static string OnGeneratedSlnSolution(string path, string content)
+        {
+            return InvokeAssetPostProcessorGenerationCallbacks(nameof(OnGeneratedSlnSolution), path, content);
+        }
+
         public void Sync()
         {
             SetupProjectSupportedExtensions();
             GenerateAndWriteSolutionAndProjects();
+
+            OnGeneratedCSProjectFiles();
         }
 
         public bool SolutionExists()
@@ -386,24 +431,33 @@ namespace VSCodeEditor
 
         void SyncProjectFileIfNotChanged(string path, string newContents)
         {
+            if (Path.GetExtension(path) == ".csproj")
+            {
+                newContents = OnGeneratedCSProject(path, newContents);
+            }
+
             SyncFileIfNotChanged(path, newContents);
         }
 
         void SyncSolutionFileIfNotChanged(string path, string newContents)
         {
+            newContents = OnGeneratedSlnSolution(path, newContents);
+
             SyncFileIfNotChanged(path, newContents);
         }
 
         void SyncFileIfNotChanged(string filename, string newContents)
         {
-            if (m_FileIOProvider.Exists(filename))
+            try
             {
-                var currentContents = m_FileIOProvider.ReadAllText(filename);
-
-                if (currentContents == newContents)
+                if (m_FileIOProvider.Exists(filename) && newContents == m_FileIOProvider.ReadAllText(filename))
                 {
                     return;
                 }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
 
             m_FileIOProvider.WriteAllText(filename, newContents);
