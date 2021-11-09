@@ -281,10 +281,16 @@ namespace VSCodeEditor.Tests
             const string solutionGUID = "SolutionGUID";
             const string newSolutionGUID = "1234567";
 
+            // This is here because the fact this OnGenerationCallbacks is around 
+            // will cause it to get executed.
+            static bool m_isRunningThisTest = false;
+
             public class OnGenerationCallbacks : AssetPostprocessor 
             {
                 public static string OnGeneratedSlnSolution(string path, string content)
                 {
+                    if(!m_isRunningThisTest) return content;
+
                     m_HasCalledOnGeneratedSlnSolution = true;
                     return content.Replace(solutionGUID, newSolutionGUID);
                 }
@@ -293,15 +299,21 @@ namespace VSCodeEditor.Tests
             [Test]
             public void OnGenerationSolution_Called()
             {
+                m_isRunningThisTest = true;
+
                 var synchronizer = m_Builder.Build();
                 synchronizer.Sync();
 
                 Assert.True(m_HasCalledOnGeneratedSlnSolution);
+
+                m_isRunningThisTest = false;
             }
 
             [Test]
             public void OnGenerationSolution_Modifed()
             {
+                m_isRunningThisTest = true;
+
                 var synchronizer = m_Builder
                     .WithSolutionGuid(solutionGUID)
                     .Build();
@@ -312,6 +324,8 @@ namespace VSCodeEditor.Tests
                 StringAssert.DoesNotContain(solutionGUID, slnFileContents);
                 StringAssert.Contains(newSolutionGUID, slnFileContents);
                 Assert.True(m_HasCalledOnGeneratedSlnSolution);
+
+                m_isRunningThisTest = false;
             }
         }
     }

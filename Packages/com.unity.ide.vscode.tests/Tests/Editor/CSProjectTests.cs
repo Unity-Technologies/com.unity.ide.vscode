@@ -763,10 +763,14 @@ namespace VSCodeEditor.Tests
         {
             static bool m_HasCalledOnGeneratedCSProject = false;
 
+            static bool m_isRunningThisTest = false;
+
             public class OnGenerationCallbacks : AssetPostprocessor 
             {
                 public static string OnGeneratedCSProject(string path, string content) 
                 {
+                    if(!m_isRunningThisTest) return content;
+
                     m_HasCalledOnGeneratedCSProject = true;
                     return content.Replace("fileA", "fileD");
                 }
@@ -775,15 +779,21 @@ namespace VSCodeEditor.Tests
             [Test]
             public void OnGenerationProject_Called()
             {
+                m_isRunningThisTest = true;
+                
                 var synchronizer = m_Builder.Build();
                 synchronizer.Sync();
 
                 Assert.True(m_HasCalledOnGeneratedCSProject);
+
+                m_isRunningThisTest = false;
             }
 
             [Test]
             public void OnGenerationProject_Modifed()
             {
+                m_isRunningThisTest = true;
+
                 var files = new[] { "fileA.cs", "fileB.cs", "fileC.cs" };
                 var synchronizer = m_Builder
                     .WithAssemblyData(files: files)
@@ -795,6 +805,9 @@ namespace VSCodeEditor.Tests
                 StringAssert.DoesNotContain("fileA.cs", csprojFileContents);
                 StringAssert.Contains("fileD.cs", csprojFileContents);
                 Assert.True(m_HasCalledOnGeneratedCSProject);
+
+                m_isRunningThisTest = false;
+
             }
         }
     }
