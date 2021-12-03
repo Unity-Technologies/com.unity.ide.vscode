@@ -566,7 +566,9 @@ namespace VSCodeEditor
                 assembly.name,
                 string.Join(";", new[] { "DEBUG", "TRACE" }.Concat(assembly.defines).Concat(responseFilesData.SelectMany(x => x.Defines)).Concat(EditorUserBuildSettings.activeScriptCompilationDefines).Distinct().ToArray()),
                 assembly.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe),
-                CreateAnalyzerBlock(otherArguments, assembly));
+                CreateAnalyzerBlock(otherArguments, assembly),
+                assembly.compilerOptions.RoslynAnalyzerRulesetPath
+            );
         }
 
         string CreateAnalyzerBlock(ILookup<string, string> otherArguments, Assembly assembly)
@@ -648,7 +650,8 @@ namespace VSCodeEditor
             string assemblyName,
             string defines,
             bool allowUnsafe,
-            string analyzerBlock
+            string analyzerBlock,
+            string rulesetFilePath
         )
         {
             builder.Append(@"<?xml version=""1.0"" encoding=""utf-8""?>").Append(k_WindowsNewline);
@@ -687,6 +690,10 @@ namespace VSCodeEditor
             builder.Append(@"    <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>").Append(k_WindowsNewline);
             builder.Append(@"    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>").Append(k_WindowsNewline);
             builder.Append(@"    <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>").Append(k_WindowsNewline);
+#if UNITY_2020_2_OR_NEWER
+            if (rulesetFilePath != null)
+              builder.Append(@$"    <CodeAnalysisRuleSet>{rulesetFilePath}</CodeAnalysisRuleSet>");
+#endif
             builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
             builder.Append(analyzerBlock);
             builder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
