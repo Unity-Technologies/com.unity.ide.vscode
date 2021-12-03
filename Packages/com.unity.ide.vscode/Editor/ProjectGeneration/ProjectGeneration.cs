@@ -692,7 +692,7 @@ namespace VSCodeEditor
             builder.Append(@"    <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>").Append(k_WindowsNewline);
 #if UNITY_2020_2_OR_NEWER
             if (rulesetFilePath != null)
-              builder.Append(@$"    <CodeAnalysisRuleSet>{rulesetFilePath}</CodeAnalysisRuleSet>");
+              builder.Append(@$"    <CodeAnalysisRuleSet>{rulesetFilePath}</CodeAnalysisRuleSet>").Append(k_WindowsNewline);
 #endif
             builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
             builder.Append(analyzerBlock);
