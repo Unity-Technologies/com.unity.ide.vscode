@@ -118,6 +118,9 @@ namespace VSCodeEditor
         static readonly string[] k_ReimportSyncExtensions = { ".dll", ".asmdef" };
 
         string[] m_ProjectSupportedExtensions = new string[0];
+
+        string InitialWorkingDirectory;
+
         public string ProjectDirectory { get; }
         IAssemblyNameProvider IGenerator.AssemblyNameProvider => m_AssemblyNameProvider;
 
@@ -258,10 +261,14 @@ namespace VSCodeEditor
 
         public void Sync()
         {
+            InitialWorkingDirectory = Environment.CurrentDirectory;
+            Environment.CurrentDirectory = ProjectDirectory;
+
             SetupProjectSupportedExtensions();
             GenerateAndWriteSolutionAndProjects();
 
             OnGeneratedCSProjectFiles();
+            Environment.CurrentDirectory = InitialWorkingDirectory;
         }
 
         public bool SolutionExists()
@@ -572,7 +579,7 @@ namespace VSCodeEditor
                 .Concat(m_AssemblyNameProvider.GetRoslynAnalyzerPaths())
 #endif
                 .Distinct()
-                .Select(path => MakeAbsolutePath(path, ProjectDirectory).NormalizePath())
+                .Select(path => Path.GetFullPath(path))
                 .ToArray());
         }
 
