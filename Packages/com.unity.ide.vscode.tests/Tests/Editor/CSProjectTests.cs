@@ -60,6 +60,14 @@ namespace VSCodeEditor.Tests
             [Test]
             public void DefaultSyncSettings_WhenSynced_CreatesProjectFileFromDefaultTemplate()
             {
+#if UNITY_2021_2_OR_NEWER
+                const string versionCSharp = "9.0";
+#elif UNITY_2020_2_OR_NEWER
+                const string versionCSharp = "8.0";
+#else
+                const string versionCSharp = "7.3";
+#endif
+
                 var projectGuid = "ProjectGuid";
                 var synchronizer = m_Builder.WithProjectGuid(projectGuid, m_Builder.Assembly).Build();
 
@@ -72,7 +80,7 @@ namespace VSCodeEditor.Tests
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
                     "<Project ToolsVersion=\"4.0\" DefaultTargets=\"Build\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">",
                     "  <PropertyGroup>",
-                    "    <LangVersion>latest</LangVersion>",
+                    $"    <LangVersion>{versionCSharp}</LangVersion>",
                     "  </PropertyGroup>",
                     "  <PropertyGroup>",
                     "    <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>",
@@ -510,7 +518,13 @@ namespace VSCodeEditor.Tests
             [Test]
             public void CheckDefaultLangVersion()
             {
-                CheckOtherArgument(new string[0], "<LangVersion>latest</LangVersion>");
+#if UNITY_2021_2_OR_NEWER        
+                CheckOtherArgument(new string[0], "<LangVersion>9.0</LangVersion>");
+#elif UNITY_2020_2_OR_NEWER        
+                CheckOtherArgument(new string[0], "<LangVersion>8.0</LangVersion>");
+#else
+                CheckOtherArgument(new string[0], "<LangVersion>7.3</LangVersion>");
+#endif
             }
 
             public void CheckOtherArgument(string[] argumentString, params string[] expectedContents)
@@ -579,7 +593,7 @@ namespace VSCodeEditor.Tests
                 XmlDocument scriptProject = XMLUtilities.FromText(csprojFileContents);
                 XMLUtilities.AssertCompileItemsMatchExactly(scriptProject, new[] { "file.cs" });
                 XMLUtilities.AssertNonCompileItemsMatchExactly(scriptProject, new string[0]);
-                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"reference\">\\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory,referenceDll))}\\W*</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"reference\">\\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory, referenceDll))}\\W*</HintPath>\\W*</Reference>"));
             }
 
             [Test]
