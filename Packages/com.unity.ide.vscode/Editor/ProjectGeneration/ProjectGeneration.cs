@@ -148,8 +148,13 @@ namespace VSCodeEditor
         const string k_ProductVersion = "10.0.20506";
         const string k_BaseDirectory = ".";
         const string k_TargetFrameworkVersion = "v4.7.1";
-        const string k_TargetLanguageVersion = "latest";
-
+#if UNITY_2021_2_OR_NEWER        
+        const string k_TargetLanguageVersion = "9.0";
+#elif UNITY_2020_2_OR_NEWER        
+        const string k_TargetLanguageVersion = "8.0";
+#else
+        const string k_TargetLanguageVersion = "7.3";
+#endif
         public ProjectGeneration(string tempDirectory)
             : this(tempDirectory, new AssemblyNameProvider(), new FileIOProvider(), new GUIDProvider()) { }
 
