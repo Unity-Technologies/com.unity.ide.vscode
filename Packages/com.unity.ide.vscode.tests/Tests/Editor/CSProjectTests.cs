@@ -60,6 +60,13 @@ namespace VSCodeEditor.Tests
             [Test]
             public void DefaultSyncSettings_WhenSynced_CreatesProjectFileFromDefaultTemplate()
             {
+            #if UNITY_2021_2_OR_NEWER
+                const string versionCSharp = "9.0";
+#elif UNITY_2020_2_OR_NEWER
+                const string versionCSharp = "8.0";
+#else
+                const string versionCSharp = "7.3";
+#endif
                 var projectGuid = "ProjectGuid";
                 var synchronizer = m_Builder.WithProjectGuid(projectGuid, m_Builder.Assembly).Build();
 
@@ -72,7 +79,7 @@ namespace VSCodeEditor.Tests
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
                     "<Project ToolsVersion=\"4.0\" DefaultTargets=\"Build\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">",
                     "  <PropertyGroup>",
-                    "    <LangVersion>latest</LangVersion>",
+                    $"    <LangVersion>{versionCSharp}</LangVersion>",
                     "  </PropertyGroup>",
                     "  <PropertyGroup>",
                     "    <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>",
