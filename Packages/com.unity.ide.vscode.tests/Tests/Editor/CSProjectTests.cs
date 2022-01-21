@@ -517,7 +517,13 @@ namespace VSCodeEditor.Tests
             [Test]
             public void CheckDefaultLangVersion()
             {
-                CheckOtherArgument(new string[0], "<LangVersion>latest</LangVersion>");
+#if UNITY_2021_2_OR_NEWER        
+                CheckOtherArgument(new string[0], "<LangVersion>9.0</LangVersion>");
+#elif UNITY_2020_2_OR_NEWER        
+                CheckOtherArgument(new string[0], "<LangVersion>8.0</LangVersion>");
+#else
+                CheckOtherArgument(new string[0], "<LangVersion>7.3</LangVersion>");
+#endif
             }
 
             public void CheckOtherArgument(string[] argumentString, params string[] expectedContents)
