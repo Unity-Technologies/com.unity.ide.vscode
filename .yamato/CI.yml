@@ -209,5 +209,5 @@ create_pull_request:
     flavor: b1.large
   commands:
     - git clone git@github.cds.internal.unity3d.com:nicklas/Nicklas-CI.git /tmp/Nicklas-CI
-    - python3 /tmp/Nicklas-CI/create_pullrequest.py nicklas upm-ci~/packages/packages.json
-    - python3 /tmp/Nicklas-CI/start_katana.py "Nicklas Pingel <nicklas@unity3d.com>" upm-ci~/packages/packages.json
+    - python3 /tmp/Nicklas-CI/create_pullrequest.py simon.ferquel upm-ci~/packages/packages.json
+    - python3 /tmp/Nicklas-CI/start_katana.py "Simon Ferquel <simon.ferquel@unity3d.com>" upm-ci~/packages/packages.json

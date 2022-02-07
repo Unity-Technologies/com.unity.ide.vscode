@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using NUnit.Framework;
 
@@ -30,6 +31,13 @@ namespace VSCodeEditor.Tests
             var utf8 = Encoding.UTF8;
             byte[] utfBytes = utf8.GetBytes(content);
             fileToContent[fileName] = utf8.GetString(utfBytes, 0, utfBytes.Length);
+        }
+        
+        public string EscapedRelativePathFor(string file, string projectDirectory)
+        {
+            return file.NormalizePath().StartsWith($"{projectDirectory}{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                ? file.Substring(projectDirectory.Length + 1)
+                : file.NormalizePath();
         }
 
         public void DeleteFile(string fileName)

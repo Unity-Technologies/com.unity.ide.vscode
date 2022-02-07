@@ -19,6 +19,13 @@ namespace VSCodeEditor.Tests
                 expected: RelativeAssetPathsFor(expectedAnalyzers), 
                 actual:projectXml.SelectAttributeValues("/msb:Project/msb:ItemGroup/msb:Analyzer/@Include", GetModifiedXmlNamespaceManager(projectXml)).ToArray());
         }
+        
+        public static void AssertAnalyzerRuleSetsMatchExactly(XmlDocument projectXml, string expectedRuleSetFile)
+        {
+            CollectionAssert.Contains(
+                projectXml.SelectInnerText("/msb:Project/msb:PropertyGroup/msb:CodeAnalysisRuleSet",
+                    GetModifiedXmlNamespaceManager(projectXml)).ToArray(), expectedRuleSetFile);
+        }
 
         public static void AssertNonCompileItemsMatchExactly(XmlDocument projectXml, IEnumerable<string> expectedNoncompileItems)
         {
@@ -43,6 +50,15 @@ namespace VSCodeEditor.Tests
             var result = xmlDocument.SelectNodes(xpathQuery, xmlNamespaceManager);
             foreach (XmlAttribute attribute in result)
                 yield return attribute.Value;
+        }
+
+        static IEnumerable<string> SelectInnerText(this XmlDocument xmlDocument, string xpathQuery, XmlNamespaceManager xmlNamespaceManager)
+        {
+            var result = xmlDocument.SelectNodes(xpathQuery, xmlNamespaceManager);
+            foreach (XmlElement node in result)
+            {
+                yield return node.InnerText;
+            }
         }
 
         public static XmlDocument FromText(string textContent)

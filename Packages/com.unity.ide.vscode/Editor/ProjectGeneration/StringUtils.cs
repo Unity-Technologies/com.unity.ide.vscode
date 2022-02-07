@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Unity.VSCode.EditorTests")]
 
-namespace VSCodeEditor.Tests
+namespace VSCodeEditor
 {
     internal static class StringUtils
     {
