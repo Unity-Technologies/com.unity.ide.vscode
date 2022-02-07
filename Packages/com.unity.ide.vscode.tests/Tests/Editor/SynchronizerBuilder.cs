@@ -22,7 +22,7 @@ namespace VSCodeEditor.Tests
         Mock<IGUIDGenerator> m_GUIDGenerator = new Mock<IGUIDGenerator>();
 
         public string ReadFile(string fileName) => m_FileIoMock.ReadAllText(fileName);
-        public string ProjectFilePath(Assembly assembly) => Path.Combine(projectDirectory, $"{assembly.name}.csproj");
+        public static string ProjectFilePath(Assembly assembly) => Path.Combine(projectDirectory, $"{assembly.name}.csproj");
         public string ReadProjectFile(Assembly assembly) => ReadFile(ProjectFilePath(assembly));
         public bool FileExists(string fileName) => m_FileIoMock.Exists(fileName);
         public void DeleteFile(string fileName) => m_FileIoMock.DeleteFile(fileName);
@@ -95,9 +95,7 @@ namespace VSCodeEditor.Tests
                 compiledAssemblyReferences ?? new string[0],
                 AssemblyFlags.None);
             assembly.compilerOptions.AllowUnsafeCode = unsafeSettings;
-            return WithAssembly(
-                assembly
-            );
+            return WithAssembly(assembly);
         }
 
         public SynchronizerBuilder WithAssembly(Assembly assembly)
@@ -150,18 +148,28 @@ namespace VSCodeEditor.Tests
             return this;
         }
 
+#if UNITY_2020_2_OR_NEWER
+        public SynchronizerBuilder WithRoslynAnalyzerRulesetPath(string roslynAnalyzerRuleSetPath)
+        {
+            foreach (var assembly in m_Assemblies)
+            {
+                assembly.compilerOptions.RoslynAnalyzerRulesetPath = roslynAnalyzerRuleSetPath;
+            }
+            return this;
+        }
+
         public SynchronizerBuilder WithRoslynAnalyzers(string[] roslynAnalyzerDllPaths)
         {
-#if UNITY_2020_2_OR_NEWER
+#if !ROSLYN_ANALYZER_FIX
+            m_AssemblyProvider.Setup(x => x.GetRoslynAnalyzerPaths()).Returns(roslynAnalyzerDllPaths);
+#else
             foreach (var assembly in m_Assemblies)
             {
                 assembly.compilerOptions.RoslynAnalyzerDllPaths = roslynAnalyzerDllPaths;
             }
-#else
-            m_AssemblyProvider.Setup(x => x.GetRoslynAnalyzerPaths()).Returns(roslynAnalyzerDllPaths);
 #endif
-
             return this;
         }
+#endif
     }
 }

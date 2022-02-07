@@ -51,7 +51,8 @@ namespace VSCodeEditor
                 "/bin/code",
                 "/usr/local/bin/code",
                 "/var/lib/flatpak/exports/bin/com.visualstudio.code",
-                "/snap/current/bin/code"
+                "/snap/current/bin/code",
+                "/snap/bin/code"
             };
 #endif
             var existingPaths = possiblePaths.Where(VSCodeExists).ToList();

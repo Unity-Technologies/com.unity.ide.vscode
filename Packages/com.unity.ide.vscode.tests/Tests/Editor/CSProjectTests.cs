@@ -14,40 +14,10 @@ namespace VSCodeEditor.Tests
     {
         class Formatting : ProjectGenerationTestBase
         {
-            [TestCase(@"x & y.cs", @"x &amp; y.cs")]
-            [TestCase(@"x ' y.cs", @"x &apos; y.cs")]
-            [TestCase(@"Dimmer&\foo.cs", @"Dimmer&amp;\foo.cs")]
-            [TestCase(@"C:\Dimmer/foo.cs", @"C:\Dimmer\foo.cs")]
-            public void Escape_SpecialCharsInFileName(string illegalFormattedFileName, string expectedFileName)
-            {
-                var synchronizer = m_Builder.WithAssemblyData(files: new[] { illegalFormattedFileName }).Build();
-
-                synchronizer.Sync();
-
-                var csprojContent = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                StringAssert.DoesNotContain(illegalFormattedFileName, csprojContent);
-                StringAssert.Contains(expectedFileName.NormalizePath(), csprojContent);
-            }
-
-            [Test]
-            public void NoExtension_IsNotValid()
-            {
-                var validFile = "dimmer.cs";
-                var invalidFile = "foo";
-                var file = new[] { validFile, invalidFile };
-                var synchronizer = m_Builder.WithAssemblyData(files: file).Build();
-
-                synchronizer.Sync();
-
-                var csprojContent = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                XmlDocument scriptProject = XMLUtilities.FromText(csprojContent);
-                XMLUtilities.AssertCompileItemsMatchExactly(scriptProject, new[] { validFile });
-            }
-
             [Test]
             public void AbsoluteSourceFilePaths_WillBeMadeRelativeToProjectDirectory()
             {
-                var absoluteFilePath = MakeAbsolutePath("dimmer.cs");
+                var absoluteFilePath = MakeAbsolutePathTestImplementation("dimmer.cs");
                 var synchronizer = m_Builder.WithAssemblyData(files: new[] { absoluteFilePath }).Build();
 
                 synchronizer.Sync();
@@ -72,7 +42,7 @@ namespace VSCodeEditor.Tests
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
                     "<Project ToolsVersion=\"4.0\" DefaultTargets=\"Build\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">",
                     "  <PropertyGroup>",
-                    "    <LangVersion>latest</LangVersion>",
+                    $"    <LangVersion>{Helper.GetLangVersion()}</LangVersion>",
                     "  </PropertyGroup>",
                     "  <PropertyGroup>",
                     "    <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>",
@@ -137,8 +107,8 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
 
-                var assemblyACSproject = MakeAbsolutePath($"{assemblyA.name}.csproj");
-                var assemblyBCSproject = MakeAbsolutePath($"{assemblyB.name}.csproj");
+                var assemblyACSproject = SynchronizerBuilder.ProjectFilePath(assemblyA);
+                var assemblyBCSproject = SynchronizerBuilder.ProjectFilePath(assemblyB);
 
                 Assert.True(m_Builder.FileExists(assemblyACSproject));
                 Assert.True(m_Builder.FileExists(assemblyBCSproject));
@@ -171,11 +141,11 @@ namespace VSCodeEditor.Tests
             {
                 var synchronizer = m_Builder.Build();
 
-                Assert.IsFalse(m_Builder.FileExists(m_Builder.ProjectFilePath(m_Builder.Assembly)));
+                Assert.IsFalse(m_Builder.FileExists(SynchronizerBuilder.ProjectFilePath(m_Builder.Assembly)));
 
                 synchronizer.Sync();
 
-                Assert.IsTrue(m_Builder.FileExists(m_Builder.ProjectFilePath(m_Builder.Assembly)));
+                Assert.IsTrue(m_Builder.FileExists(SynchronizerBuilder.ProjectFilePath(m_Builder.Assembly)));
             }
 
             [Test]
@@ -187,8 +157,8 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync();
 
-                Assert.IsTrue(m_Builder.FileExists(m_Builder.ProjectFilePath(assemblyA)));
-                Assert.IsTrue(m_Builder.FileExists(m_Builder.ProjectFilePath(assemblyB)));
+                Assert.IsTrue(m_Builder.FileExists(SynchronizerBuilder.ProjectFilePath(assemblyA)));
+                Assert.IsTrue(m_Builder.FileExists(SynchronizerBuilder.ProjectFilePath(assemblyB)));
             }
 
             [Test]
@@ -212,7 +182,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 Assert.False(
-                    m_Builder.FileExists(MakeAbsolutePath($"{m_Builder.Assembly.name}.csproj")),
+                    m_Builder.FileExists(SynchronizerBuilder.ProjectFilePath(m_Builder.Assembly)),
                     "Should not create csproj file for assembly with no cs file");
             }
 
@@ -245,9 +215,9 @@ namespace VSCodeEditor.Tests
             [Test]
             public void FullPathAsset_WillBeConvertedToRelativeFromProjectDirectory()
             {
-                var assetPath = "Assets/Asset.cs";
+                var assetPath = Path.Combine("Assets", "Asset.cs");
                 var synchronizer = m_Builder
-                    .WithAssemblyData(files: new[] { MakeAbsolutePath(assetPath) })
+                    .WithAssemblyData(files: new[] { MakeAbsolutePathTestImplementation(assetPath) })
                     .Build();
 
                 synchronizer.Sync();
@@ -353,8 +323,8 @@ namespace VSCodeEditor.Tests
 
             }
 
-            [TestCase(@"path\com.unity.cs")]
-            [TestCase(@"..\path\file.cs")]
+            [TestCase(@"path/com.unity.cs")]
+            [TestCase(@"../path/file.cs")]
             public void IsValidFileName(string filePath)
             {
                 var synchronizer = m_Builder
@@ -504,13 +474,19 @@ namespace VSCodeEditor.Tests
             [Test]
             public void CheckDefaultWarningLevel()
             {
-                CheckOtherArgument(new string[0], $"<WarningLevel>4</WarningLevel>");
+                CheckOtherArgument(Array.Empty<string>(), "<WarningLevel>4</WarningLevel>");
+            }
+
+            [Test]
+            public void CheckLangVersion()
+            {
+                CheckOtherArgument(new[] { "-langversion:7.2" }, "<LangVersion>7.2</LangVersion>");
             }
 
             [Test]
             public void CheckDefaultLangVersion()
             {
-                CheckOtherArgument(new string[0], "<LangVersion>latest</LangVersion>");
+                CheckOtherArgument(Array.Empty<string>(), $"<LangVersion>{Helper.GetLangVersion()}</LangVersion>");
             }
 
             public void CheckOtherArgument(string[] argumentString, params string[] expectedContents)
@@ -552,10 +528,11 @@ namespace VSCodeEditor.Tests
 
         class References : ProjectGenerationTestBase
         {
+#if UNITY_2020_2_OR_NEWER
             [Test]
             public void RoslynAnalyzerDlls_WillBeIncluded()
             {
-                var roslynAnalyzerDllPath = "Assets\\RoslynAnalyzer.dll";
+                var roslynAnalyzerDllPath = "Assets/RoslynAnalyzer.dll";
                 var synchronizer = m_Builder.WithRoslynAnalyzers(new[] { roslynAnalyzerDllPath }).Build();
 
                 synchronizer.Sync();
@@ -566,21 +543,16 @@ namespace VSCodeEditor.Tests
             }
 
             [Test]
-            public void DllInSourceFiles_WillBeAddedAsReference()
+            public void RoslynAnalyzerRulesetFiles_WillBeIncluded()
             {
-                var referenceDll = "reference.dll";
-                var synchronizer = m_Builder
-                    .WithAssemblyData(files: new[] { "file.cs", referenceDll })
-                    .Build();
+                var roslynAnalyzerRuleSetPath = "Assets/RoslynRuleSet.ruleset";
 
-                synchronizer.Sync();
-
-                var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                XmlDocument scriptProject = XMLUtilities.FromText(csprojFileContents);
-                XMLUtilities.AssertCompileItemsMatchExactly(scriptProject, new[] { "file.cs" });
-                XMLUtilities.AssertNonCompileItemsMatchExactly(scriptProject, new string[0]);
-                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"reference\">\\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory,referenceDll))}\\W*</HintPath>\\W*</Reference>"));
+                m_Builder.WithAssemblyData(files: new[] {"file.cs"}).WithRoslynAnalyzerRulesetPath(roslynAnalyzerRuleSetPath).Build().Sync();
+                var csProjectFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
+                XmlDocument csProjectXmlFile = XMLUtilities.FromText(csProjectFileContents);
+                XMLUtilities.AssertAnalyzerRuleSetsMatchExactly(csProjectXmlFile, MakeAbsolutePath(roslynAnalyzerRuleSetPath).NormalizePath());
             }
+#endif
 
             [Test]
             public void Containing_PathWithSpaces_IsParsedCorrectly()
@@ -593,7 +565,7 @@ namespace VSCodeEditor.Tests
                 synchronizer.Sync();
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
-                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"Goodbye\">\\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory, "Folder/Path With Space/Goodbye.dll".NormalizePath()))}\\W*</HintPath>\\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($"<Reference Include=\"Goodbye\">\\W*<HintPath>{Regex.Escape(MakeAbsolutePathTestImplementation("Folder/Path With Space/Goodbye.dll").NormalizePath())}\\W*</HintPath>\\W*</Reference>"));
             }
 
             [Test]
@@ -622,8 +594,8 @@ namespace VSCodeEditor.Tests
 
                 var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
 
-                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""Hello"">\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory, "Hello.dll"))}</HintPath>\W*</Reference>"));
-                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""MyPlugin"">\W*<HintPath>{Regex.Escape(Path.Combine(SynchronizerBuilder.projectDirectory, "MyPlugin.dll"))}</HintPath>\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""Hello"">\W*<HintPath>{Regex.Escape(MakeAbsolutePathTestImplementation("Hello.dll").NormalizePath())}</HintPath>\W*</Reference>"));
+                Assert.That(csprojFileContents, Does.Match($@"<Reference Include=""MyPlugin"">\W*<HintPath>{Regex.Escape(MakeAbsolutePathTestImplementation("MyPlugin.dll").NormalizePath())}</HintPath>\W*</Reference>"));
             }
 
             [Test]
@@ -756,6 +728,58 @@ namespace VSCodeEditor.Tests
                 Assert.That(bCsprojContent, Does.Not.Match("<DefineConstants>.*;RootedDefine.*</DefineConstants>"));
                 Assert.That(aCsprojContent, Does.Not.Match("<DefineConstants>.*;CHILD_DEFINE.*</DefineConstants>"));
                 Assert.That(aCsprojContent, Does.Match("<DefineConstants>.*;RootedDefine.*</DefineConstants>"));
+            }
+        }
+
+        class OnGenerationProject : ProjectGenerationTestBase 
+        {
+            static bool m_HasCalledOnGeneratedCSProject = false;
+
+            static bool m_isRunningThisTest = false;
+
+            public class OnGenerationCallbacks : AssetPostprocessor 
+            {
+                public static string OnGeneratedCSProject(string path, string content) 
+                {
+                    if(!m_isRunningThisTest) return content;
+
+                    m_HasCalledOnGeneratedCSProject = true;
+                    return content.Replace("fileA", "fileD");
+                }
+            }
+
+            [Test]
+            public void OnGenerationProject_Called()
+            {
+                m_isRunningThisTest = true;
+                
+                var synchronizer = m_Builder.Build();
+                synchronizer.Sync();
+
+                Assert.True(m_HasCalledOnGeneratedCSProject);
+
+                m_isRunningThisTest = false;
+            }
+
+            [Test]
+            public void OnGenerationProject_Modifed()
+            {
+                m_isRunningThisTest = true;
+
+                var files = new[] { "fileA.cs", "fileB.cs", "fileC.cs" };
+                var synchronizer = m_Builder
+                    .WithAssemblyData(files: files)
+                    .Build();
+
+                synchronizer.Sync();
+
+                var csprojFileContents = m_Builder.ReadProjectFile(m_Builder.Assembly);
+                StringAssert.DoesNotContain("fileA.cs", csprojFileContents);
+                StringAssert.Contains("fileD.cs", csprojFileContents);
+                Assert.True(m_HasCalledOnGeneratedCSProject);
+
+                m_isRunningThisTest = false;
+
             }
         }
     }
