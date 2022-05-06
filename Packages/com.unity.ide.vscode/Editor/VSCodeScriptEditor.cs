@@ -182,16 +182,18 @@ namespace VSCodeEditor
             if (column == -1)
                 column = 0;
 
+            var workspacePath = $"{m_ProjectGeneration.ProjectDirectory}/{Path.GetFileName(m_ProjectGeneration.ProjectDirectory)}.code-workspace";
+
             string arguments;
             if (Arguments != DefaultArgument)
             {
                 arguments = m_ProjectGeneration.ProjectDirectory != path
                     ? CodeEditor.ParseArgument(Arguments, path, line, column)
-                    : m_ProjectGeneration.ProjectDirectory;
+                    : workspacePath;
             }
             else
             {
-                arguments = $@"""{m_ProjectGeneration.ProjectDirectory}""";
+                arguments = $@"""{workspacePath}""";
                 if (m_ProjectGeneration.ProjectDirectory != path && path.Length != 0)
                 {
                     arguments += $@" -g ""{path}"":{line}:{column}";
