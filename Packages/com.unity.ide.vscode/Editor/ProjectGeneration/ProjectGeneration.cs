@@ -92,6 +92,14 @@ namespace VSCodeEditor
     }
 }";
 
+        const string k_WorkspaceJson = @"{
+	""folders"": [
+		{
+			""path"": "".""
+		}
+	]
+}";
+
         /// <summary>
         /// Map source extensions to ScriptingLanguages
         /// </summary>
@@ -348,6 +356,7 @@ namespace VSCodeEditor
             }
 
             WriteVSCodeSettingsFiles();
+            WriteWorkspaceFile();
         }
 
         List<ResponseFileData> ParseResponseFileData(Assembly assembly)
@@ -803,6 +812,14 @@ namespace VSCodeEditor
 
             if (!m_FileIOProvider.Exists(vsCodeSettingsJson))
                 m_FileIOProvider.WriteAllText(vsCodeSettingsJson, k_SettingsJson);
+        }
+
+        void WriteWorkspaceFile()
+        {
+            var workspaceFile = Path.Combine(ProjectDirectory, $"{m_ProjectName}.code-workspace");
+
+            if (!m_FileIOProvider.Exists(workspaceFile))
+                m_FileIOProvider.WriteAllText(workspaceFile, k_WorkspaceJson);
         }
     }
 

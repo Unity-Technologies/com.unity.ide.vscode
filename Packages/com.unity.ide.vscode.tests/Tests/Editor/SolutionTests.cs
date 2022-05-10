@@ -54,11 +54,11 @@ namespace VSCodeEditor.Tests
                 var synchronizer = m_Builder.Build();
 
                 synchronizer.Sync();
-                Assert.AreEqual(3, m_Builder.WriteTimes); // Once for csproj, once for solution, and once for vscode settings
+                Assert.AreEqual(4, m_Builder.WriteTimes, "Once for csproj, once for solution, once for workspace, and once for vscode settings");
 
                 synchronizer.Sync();
                 Assert.AreEqual(
-                    3,
+                    4,
                     m_Builder.WriteTimes,
                     "When content doesn't change we shouldn't re-sync");
             }
@@ -69,12 +69,12 @@ namespace VSCodeEditor.Tests
                 var synchronizer = m_Builder.Build();
 
                 synchronizer.Sync();
-                Assert.AreEqual(3, m_Builder.WriteTimes); // Once for csproj, once for solution, and once vscode settings
+                Assert.AreEqual(4, m_Builder.WriteTimes, "Once for csproj, once for solution, once for workspace file, and once vscode settings");
 
                 m_Builder.WithAssemblies(new[] { new Assembly("Another", "path/to/Assembly.dll", new[] { "file.cs" }, new string[0], new Assembly[0], new string[0], AssemblyFlags.None) });
 
                 synchronizer.Sync();
-                Assert.AreEqual(5, m_Builder.WriteTimes, "Should re-sync the solution file and the csproj");
+                Assert.AreEqual(6, m_Builder.WriteTimes, "Should re-sync the solution file and the csproj");
             }
 
             [Test]
@@ -158,7 +158,7 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync(); // Generate solution and csproj
 
-                Assert.AreEqual(3, m_Builder.WriteTimes, "Should have written csproj, sln, and vscode setting files");
+                Assert.AreEqual(4, m_Builder.WriteTimes, "Should have written csproj, sln, workspace, and vscode setting files");
 
                 m_Builder.WithAssetFiles(new[] {"X.cs"});
 
@@ -167,9 +167,9 @@ namespace VSCodeEditor.Tests
                 Assert.IsTrue(res, "Should support file extension");
 
                 Assert.AreEqual(
-                    3,
+                    4,
                     m_Builder.WriteTimes,
-                    "Should not have rewritten neither csproj, sln, nor vscode setting files");
+                    "Should not have rewritten neither csproj, sln, workspace, nor vscode setting files");
             }
 
             [Test]
@@ -179,7 +179,7 @@ namespace VSCodeEditor.Tests
 
                 synchronizer.Sync(); // Generate solution and csproj
 
-                Assert.AreEqual(3, m_Builder.WriteTimes, "Should have written csproj, sln, and vscode setting files");
+                Assert.AreEqual(4, m_Builder.WriteTimes, "Should have written csproj, sln, workspace, and vscode setting files");
 
                 string[] files = {"X.cs"};
                 m_Builder
@@ -193,7 +193,7 @@ namespace VSCodeEditor.Tests
                 Assert.IsTrue(res, "Should support file extension");
 
                 Assert.AreEqual(
-                    3,
+                    4,
                     m_Builder.WriteTimes,
                     "Should only rewrite sln file");
             }

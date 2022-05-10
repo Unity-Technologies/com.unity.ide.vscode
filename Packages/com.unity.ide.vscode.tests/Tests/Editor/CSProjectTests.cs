@@ -28,6 +28,25 @@ namespace VSCodeEditor.Tests
             }
 
             [Test]
+            public void DefaultSettings_WhenSynced_CreateWorkspaceFile()
+            {
+                var synchronizer = m_Builder.Build();
+                synchronizer.Sync();
+
+                var projectName = Path.GetFileName(synchronizer.ProjectDirectory); // This could be a public API
+                var workspaceFile = Path.Combine(synchronizer.ProjectDirectory, $"{projectName}.code-workspace");
+                var workspaceFileContent = m_Builder.ReadFile(workspaceFile);
+                var content = @"{
+	""folders"": [
+		{
+			""path"": "".""
+		}
+	]
+}";
+                Assert.That(workspaceFileContent, Is.EqualTo(content), "Workspace file content was not expected");
+            }
+
+            [Test]
             public void DefaultSyncSettings_WhenSynced_CreatesProjectFileFromDefaultTemplate()
             {
                 var projectGuid = "ProjectGuid";
@@ -130,10 +149,10 @@ namespace VSCodeEditor.Tests
                 var synchronizer = m_Builder.Build();
 
                 synchronizer.Sync();
-                Assert.AreEqual(3, m_Builder.WriteTimes, "One write for solution, one write for csproj, and one for vscode settings");
+                Assert.AreEqual(4, m_Builder.WriteTimes, "One write for solution, one write for csproj, one for workspace file, and one for vscode settings");
 
                 synchronizer.Sync();
-                Assert.AreEqual(3, m_Builder.WriteTimes, "No more files should be written");
+                Assert.AreEqual(4, m_Builder.WriteTimes, "No more files should be written");
             }
 
             [Test]
